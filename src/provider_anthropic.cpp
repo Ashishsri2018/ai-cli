@@ -29,6 +29,8 @@ std::string AnthropicProvider::build_request_body(const ChatSession& session, co
 
     Json messages = Json::array();
     for (const auto& msg : session.get_messages()) {
+        // Anthropic forbids system role in messages array; skip if leaked
+        if (msg.role == Role::System) continue;
         Json m = Json::object();
         m["role"] = (msg.role == Role::Assistant) ? "assistant" : "user";
         m["content"] = msg.content;

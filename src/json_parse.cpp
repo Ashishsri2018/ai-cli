@@ -1,4 +1,5 @@
 #include "ai/json.hpp"
+#include <charconv>
 
 namespace ai {
 
@@ -19,10 +20,16 @@ struct JsonParser {
     char get() { skip_ws(); return pos < src.size() ? src[pos++] : '\0'; }
 
     void parse_unicode(std::string& s) {
-        if (pos + 4 > src.size()) return;
+        if (pos + 4 > src.size()) { err = "Truncated unicode escape"; return; }
         std::string hex = src.substr(pos, 4);
         pos += 4;
-        unsigned int cp = std::stoul(hex, nullptr, 16);
+        unsigned int cp = 0;
+        try {
+            cp = static_cast<unsigned int>(std::stoul(hex, nullptr, 16));
+        } catch (...) {
+            err = "Invalid unicode escape: \\u" + hex;
+            return;
+        }
         if (cp < 0x80) {
             s += static_cast<char>(cp);
         } else if (cp < 0x800) {
@@ -70,12 +77,15 @@ struct JsonParser {
         while (pos < src.size() && (isdigit(src[pos]) || src[pos] == '.' || src[pos] == 'e' || src[pos] == 'E' || src[pos] == '-' || src[pos] == '+')) {
             pos++;
         }
-        try {
-            return Json(std::stod(src.substr(start, pos - start)));
-        } catch (...) {
+        double val = 0.0;
+        const char* begin = src.data() + start;
+        const char* end = src.data() + pos;
+        auto result = std::from_chars(begin, end, val);
+        if (result.ec != std::errc{}) {
             err = "Invalid number";
             return {};
         }
+        return Json(val);
     }
 
     Json parse_arr() {

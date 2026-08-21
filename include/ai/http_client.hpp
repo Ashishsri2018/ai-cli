@@ -49,7 +49,7 @@ public:
                              int timeout_sec = 120) override;
 
 private:
-    static bool global_init_done_;
+    // curl init handled via std::once_flag in .cpp
 };
 
 } // namespace ai

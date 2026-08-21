@@ -42,8 +42,10 @@ std::vector<uint8_t> sha256_bytes(const std::string& input) {
     for (size_t chunk = 0; chunk < msg.size(); chunk += 64) {
         uint32_t W[64];
         for (int t = 0; t < 16; ++t) {
-            W[t] = (msg[chunk + t * 4] << 24) | (msg[chunk + t * 4 + 1] << 16) |
-                   (msg[chunk + t * 4 + 2] << 8) | (msg[chunk + t * 4 + 3]);
+            W[t] = (static_cast<uint32_t>(msg[chunk + t * 4]) << 24) |
+                   (static_cast<uint32_t>(msg[chunk + t * 4 + 1]) << 16) |
+                   (static_cast<uint32_t>(msg[chunk + t * 4 + 2]) << 8) |
+                   static_cast<uint32_t>(msg[chunk + t * 4 + 3]);
         }
         for (int t = 16; t < 64; ++t) W[t] = theta1(W[t - 2]) + W[t - 7] + theta0(W[t - 15]) + W[t - 16];
         uint32_t a = H[0], b = H[1], c = H[2], d = H[3], e = H[4], f = H[5], g = H[6], h = H[7];

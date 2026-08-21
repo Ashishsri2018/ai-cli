@@ -87,3 +87,34 @@ AI_TEST(OpenAIListModelsParsing) {
     ASSERT_STREQ(models[0].c_str(), "gpt-4o");
     ASSERT_STREQ(models[1].c_str(), "gpt-4o-mini");
 }
+
+AI_TEST(AnthropicResponseParsing) {
+    auto p = ProviderFactory::create("anthropic");
+
+    // Test full (non-streaming) response extraction
+    std::string full_resp = R"({"content":[{"type":"text","text":"Hello world"}],"model":"claude-3-5-haiku-20241022"})";
+    ASSERT_STREQ(p->extract_response_text(full_resp).c_str(), "Hello world");
+
+    // Test stream content_block_delta extraction
+    std::string stream_delta = R"({"type":"content_block_delta","delta":{"type":"text_delta","text":"streaming"}})";
+    ASSERT_STREQ(p->extract_response_text(stream_delta).c_str(), "streaming");
+
+    // Test empty/irrelevant stream event returns empty
+    std::string ping_event = R"({"type":"ping"})";
+    ASSERT_STREQ(p->extract_response_text(ping_event).c_str(), "");
+}
+
+AI_TEST(AnthropicStreamChunkProcessing) {
+    auto p = ProviderFactory::create("anthropic");
+    std::string buffer;
+    std::string collected;
+
+    auto cb = [&](const std::string& token) { collected += token; };
+
+    // Simulate SSE chunks arriving
+    std::string sse_data = "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Hi\"}}\n\n"
+                           "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\" there\"}}\n\n"
+                           "data: [DONE]\n\n";
+    p->process_stream_chunk(sse_data, buffer, cb);
+    ASSERT_STREQ(collected.c_str(), "Hi there");
+}

@@ -1,5 +1,6 @@
 #include "test_runner.hpp"
 #include "ai/utils.hpp"
+#include <sys/stat.h>
 
 using namespace ai;
 
@@ -29,4 +30,15 @@ AI_TEST(UtilsFileReadWrite) {
     std::string read_back;
     ASSERT_TRUE(utils::read_file(test_path, read_back));
     ASSERT_STREQ(read_back.c_str(), test_data.c_str());
+}
+
+AI_TEST(UtilsSecureFilePermissions) {
+    std::string test_path = "/tmp/ai_test_secure_perms.txt";
+    ASSERT_TRUE(utils::write_file(test_path, "secret data", true));
+
+    struct stat st;
+    ASSERT_EQ(stat(test_path.c_str(), &st), 0);
+    // File should be owner-only read/write (0600)
+    mode_t perms = st.st_mode & (S_IRWXU | S_IRWXG | S_IRWXO);
+    ASSERT_EQ(perms, static_cast<mode_t>(S_IRUSR | S_IWUSR));
 }

@@ -1,15 +1,19 @@
 #include "ai/http_client.hpp"
 #include <curl/curl.h>
+#include <mutex>
 
 namespace ai {
 
-bool CurlHttpClient::global_init_done_ = false;
+namespace {
+std::once_flag curl_init_flag_;
+void curl_global_cleanup_handler() { curl_global_cleanup(); }
+} // namespace
 
 CurlHttpClient::CurlHttpClient() {
-    if (!global_init_done_) {
+    std::call_once(curl_init_flag_, []() {
         curl_global_init(CURL_GLOBAL_DEFAULT);
-        global_init_done_ = true;
-    }
+        std::atexit(curl_global_cleanup_handler);
+    });
 }
 
 CurlHttpClient::~CurlHttpClient() = default;

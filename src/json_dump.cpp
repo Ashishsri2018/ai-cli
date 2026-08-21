@@ -1,4 +1,6 @@
 #include "ai/json.hpp"
+#include <limits>
+#include <cstdio>
 
 namespace ai {
 
@@ -38,13 +40,15 @@ std::string Json::dump(int indent, int depth) const {
         case JsonType::Null: return "null";
         case JsonType::Bool: return bool_val_ ? "true" : "false";
         case JsonType::Number: {
-            std::ostringstream ss;
-            if (num_val_ == static_cast<long long>(num_val_)) {
-                ss << static_cast<long long>(num_val_);
-            } else {
-                ss << std::setprecision(10) << num_val_;
+            constexpr auto ll_min = static_cast<double>(std::numeric_limits<long long>::min());
+            constexpr auto ll_max = static_cast<double>(std::numeric_limits<long long>::max());
+            if (num_val_ >= ll_min && num_val_ <= ll_max &&
+                num_val_ == static_cast<double>(static_cast<long long>(num_val_))) {
+                return std::to_string(static_cast<long long>(num_val_));
             }
-            return ss.str();
+            char buf[64];
+            std::snprintf(buf, sizeof(buf), "%.10g", num_val_);
+            return std::string(buf);
         }
         case JsonType::String: return escape(str_val_);
         case JsonType::Array: {

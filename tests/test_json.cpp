@@ -69,3 +69,40 @@ AI_TEST(JsonEscaping) {
     ASSERT_TRUE(err.empty());
     ASSERT_STREQ(parsed.as_string().c_str(), raw.c_str());
 }
+
+AI_TEST(JsonMalformedUnicode) {
+    // Malformed unicode escape should set error, not crash
+    std::string err;
+    Json result = Json::parse(R"("\uZZZZ")", err);
+    ASSERT_FALSE(err.empty());
+}
+
+AI_TEST(JsonMismatchedBrackets) {
+    std::string err;
+    Json r1 = Json::parse("[1, 2, 3}", err);
+    ASSERT_FALSE(err.empty());
+
+    std::string err2;
+    Json r2 = Json::parse("{\"a\": 1]", err2);
+    ASSERT_FALSE(err2.empty());
+}
+
+AI_TEST(JsonUnterminatedString) {
+    std::string err;
+    Json r = Json::parse(R"("hello)", err);
+    ASSERT_FALSE(err.empty());
+}
+
+AI_TEST(JsonHugeNumber) {
+    // Should serialize very large numbers without UB
+    Json huge(1e100);
+    std::string dumped = huge.dump();
+    ASSERT_FALSE(dumped.empty());
+    ASSERT_TRUE(dumped.find("1e") != std::string::npos || dumped.find("1E") != std::string::npos);
+
+    // Roundtrip parse
+    std::string err;
+    Json parsed = Json::parse(dumped, err);
+    ASSERT_TRUE(err.empty());
+    ASSERT_TRUE(parsed.is_number());
+}

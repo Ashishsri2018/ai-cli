@@ -4,8 +4,10 @@
 #include "ai/terminal.hpp"
 #include "ai/repl.hpp"
 #include "ai/query_runner.hpp"
+#include <iostream>
 
 int main(int argc, char* argv[]) {
+    try {
     using namespace ai;
     CliArgs args = CliParser::parse(argc, argv);
     term::set_color_enabled(args.color);
@@ -44,4 +46,11 @@ int main(int argc, char* argv[]) {
 
     QueryRunner::run_single_query(cm, http_client, args);
     return 0;
+    } catch (const std::exception& e) {
+        std::cerr << "Fatal error: " << e.what() << "\n";
+        return 1;
+    } catch (...) {
+        std::cerr << "Fatal error: unknown exception\n";
+        return 1;
+    }
 }

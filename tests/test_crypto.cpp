@@ -10,6 +10,27 @@ AI_TEST(CryptoSha256) {
     ASSERT_STREQ(crypto::sha256_hex("hello").c_str(), "2cf24dba5fb0a30e26e83b2ac5b9e29e1b161e5c1fa7425e73043362938b9824");
 }
 
+AI_TEST(CryptoSha256HighBitBytes) {
+    // Input with bytes >= 128 that previously triggered signed integer overflow UB
+    // SHA-256 of bytes [0x80, 0xFF, 0xAB, 0xCD] — must not crash
+    std::string high_bit_input = {
+        static_cast<char>(0x80), static_cast<char>(0xFF),
+        static_cast<char>(0xAB), static_cast<char>(0xCD)
+    };
+    std::string hash = crypto::sha256_hex(high_bit_input);
+    ASSERT_EQ(hash.size(), 64);  // 256-bit = 64 hex chars
+
+    // Verify deterministic: same input gives same hash
+    ASSERT_STREQ(crypto::sha256_hex(high_bit_input).c_str(), hash.c_str());
+
+    // Verify known answer for "\x80" (single byte 128)
+    std::string single_0x80(1, static_cast<char>(0x80));
+    std::string hash_80 = crypto::sha256_hex(single_0x80);
+    ASSERT_EQ(hash_80.size(), 64);
+    // Must differ from empty-string hash
+    ASSERT_TRUE(hash_80 != "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855");
+}
+
 AI_TEST(CryptoBase64Roundtrip) {
     std::string text = "Secret API Key 12345!@#$%^&*()";
     std::vector<uint8_t> bytes(text.begin(), text.end());

@@ -22,3 +22,15 @@
   - [x] Add unit tests in `tests/test_crypto.cpp` and `tests/test_cli.cpp` (22/22 tests passing)
   - [x] Build, test, and install globally with `build.sh`
   - [x] Update `README.md`, `architecture.md`, `memory.md`, and walkthrough
+- [x] Code Hardening & Robustness Pass:
+  - [x] Fix signed integer overflow UB in SHA-256 (`crypto_cipher.cpp`)
+  - [x] Fix unhandled exception crash on malformed `\uXXXX` (`json_parse.cpp`)
+  - [x] Fix float-to-int UB in JSON dumper (`json_dump.cpp`)
+  - [x] Fix locale-dependent number parsing with `std::from_chars` (`json_parse.cpp`)
+  - [x] Fix TOCTOU file permission race (`utils.cpp`)
+  - [x] Fix fragile API key/provider detection (`config_cmd.cpp`)
+  - [x] Add `curl_global_cleanup` and `std::call_once` (`http_client.cpp`)
+  - [x] Add top-level exception handler (`main.cpp`)
+  - [x] Fix Anthropic system role handling (`provider_anthropic.cpp`)
+  - [x] Add 8 new test cases (30/30 tests passing)
+

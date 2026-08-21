@@ -86,12 +86,23 @@ bool write_file(const std::string& path, const std::string& content, bool secure
     if (p.has_parent_path()) {
         fs::create_directories(p.parent_path(), ec);
     }
+
+    // Set restrictive umask before creating the file to prevent TOCTOU race
+    mode_t old_umask = 0;
+    if (secure) {
+        old_umask = umask(S_IRGRP | S_IWGRP | S_IROTH | S_IWOTH); // 077
+    }
+
     std::ofstream file(path, std::ios::out | std::ios::binary | std::ios::trunc);
-    if (!file.is_open()) return false;
+    if (!file.is_open()) {
+        if (secure) umask(old_umask);
+        return false;
+    }
     file << content;
     file.close();
 
     if (secure) {
+        umask(old_umask);
         chmod(path.c_str(), S_IRUSR | S_IWUSR); // 0600
     }
     return true;

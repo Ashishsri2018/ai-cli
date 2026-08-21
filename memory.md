@@ -4,7 +4,23 @@
 Building a dependency-free, high-performance C++17 CLI client for cloud LLMs (Google Gemini, OpenAI, Anthropic, Ollama, Groq, DeepSeek).
 
 ## Milestones & Accomplishments
-- **2026-08-21**:
+- **2026-08-21 (Hardening)**:
+  - Fixed 3 critical undefined behavior bugs:
+    - Signed integer overflow in SHA-256 (`crypto_cipher.cpp`): cast `uint8_t` to `uint32_t` before left-shifting.
+    - Unhandled `std::stoul` exception crash on malformed `\uXXXX` in JSON parser (`json_parse.cpp`): added try-catch.
+    - Float-to-`long long` UB in JSON dumper (`json_dump.cpp`): added range checks with `std::numeric_limits`.
+  - Fixed 3 medium issues:
+    - Locale-dependent JSON number parsing: replaced `std::stod` with `std::from_chars` (C++17, locale-independent).
+    - TOCTOU file permission race in `utils.cpp`: set `umask(077)` before creating secure files.
+    - Fragile API key detection in `config_cmd.cpp`: match against known provider names before falling back to heuristics.
+  - Fixed 4 low-priority issues:
+    - Missing `curl_global_cleanup()`: registered via `std::atexit` handler.
+    - Non-thread-safe curl init: replaced static bool with `std::call_once`.
+    - Missing top-level exception handler: added `try`/`catch` in `main()`.
+    - Anthropic system role leak: explicit `continue` for `Role::System` in message array.
+  - Added 8 new unit tests (22→30): `JsonMalformedUnicode`, `JsonMismatchedBrackets`, `JsonUnterminatedString`, `JsonHugeNumber`, `CryptoSha256HighBitBytes`, `UtilsSecureFilePermissions`, `AnthropicResponseParsing`, `AnthropicStreamChunkProcessing`.
+  - All 30 tests passing, 0 warnings, 0 errors.
+- **2026-08-21 (Initial)**:
   - Implemented complete C++17 architecture with zero external third-party package dependencies (standard C++ STL + system `libcurl`).
   - Built custom RFC-8259 JSON parser and serializer in `include/ai/json.hpp`, `src/json_dump.cpp`, `src/json_parse.cpp`.
   - Implemented secure API key and configuration management with `0600` file permissions in `include/ai/config.hpp` and `src/config.cpp`.

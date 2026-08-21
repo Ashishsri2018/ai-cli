@@ -27,7 +27,18 @@ void handle_set_config(ConfigManager& cm, const CliArgs& args) {
     std::string sub = args.config_subcommand;
     if (sub == "api" && args.config_args.size() >= 2) {
         std::string a1 = args.config_args[0], a2 = args.config_args[1], key, prov;
-        if (a1.find("sk-") == 0 || a1.find("AIza") == 0 || a1.size() > 20) { key = a1; prov = a2; }
+        // Check if either argument is a known provider name; the other is the key
+        auto known_providers = ProviderFactory::get_supported_providers();
+        auto is_provider = [&](const std::string& s) {
+            std::string lower = utils::to_lower(s);
+            for (const auto& p : known_providers) {
+                if (utils::to_lower(p) == lower) return true;
+            }
+            return false;
+        };
+        if (is_provider(a2) && !is_provider(a1)) { key = a1; prov = a2; }
+        else if (is_provider(a1) && !is_provider(a2)) { prov = a1; key = a2; }
+        else if (a1.find("sk-") == 0 || a1.find("AIza") == 0 || a1.size() > 20) { key = a1; prov = a2; }
         else { prov = a1; key = a2; }
         cm.set_api_key(prov, key); cm.save();
         term::print_success("Saved API key for provider '" + ConfigManager::normalize_provider(prov) + "'");
