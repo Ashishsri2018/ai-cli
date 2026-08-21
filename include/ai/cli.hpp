@@ -14,6 +14,10 @@ enum class CliMode {
     ListConfig,
     ListModels,
     ListProviders,
+    ShowSystemPrompt,
+    SetSystemPrompt,
+    ShowTemperature,
+    SetTemperature,
     Help,
     Version
 };
@@ -25,7 +29,9 @@ struct CliArgs {
     std::string provider;
     std::string model;
     std::string system_prompt;
+    bool has_system_prompt{false};
     double temperature{0.7};
+    bool has_temperature{false};
     bool stream{true};
     bool color{true};
 

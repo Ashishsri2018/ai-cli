@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include <functional>
+#include <cmath>
 
 namespace ai::testing {
 
@@ -47,5 +48,13 @@ inline void register_test(const std::string& name, std::function<void()> func) {
     } while(0)
 
 #define ASSERT_STREQ(a, b) ASSERT_EQ(std::string(a), std::string(b))
+
+#define ASSERT_NEAR(a, b, eps) \
+    do { \
+        if (std::abs((a) - (b)) > (eps)) { \
+            std::cerr << "Assertion failed at " << __FILE__ << ":" << __LINE__ << ": (" #a " approx " #b ") with values: " << (a) << " vs " << (b) << "\n"; \
+            throw std::runtime_error("ASSERT_NEAR failed"); \
+        } \
+    } while(0)
 
 } // namespace ai::testing

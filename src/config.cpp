@@ -21,28 +21,20 @@ void ConfigManager::init_defaults() {
     config_.default_models["deepseek"] = "deepseek-chat";
     config_.default_models["ollama"] = "llama3.2";
     config_.custom_endpoints["ollama"] = "http://localhost:11434/v1";
+    config_.system_prompt = "";
+    config_.temperature = 0.7;
 }
 
-ConfigManager::ConfigManager() : config_path_(utils::get_config_file_path()) {
-    init_defaults();
-    load();
-}
-
-ConfigManager::ConfigManager(std::string path) : config_path_(std::move(path)) {
-    init_defaults();
-    load();
-}
+ConfigManager::ConfigManager() : config_path_(utils::get_config_file_path()) { init_defaults(); load(); }
+ConfigManager::ConfigManager(std::string path) : config_path_(std::move(path)) { init_defaults(); load(); }
 
 bool ConfigManager::load() {
-    std::string content;
+    std::string content, err;
     if (!utils::read_file(config_path_, content)) return false;
-    std::string err;
     Json root = Json::parse(content, err);
     if (!err.empty() || !root.is_object()) return false;
 
-    if (root.has("default_provider")) {
-        config_.default_provider = root["default_provider"].as_string();
-    }
+    if (root.has("default_provider")) config_.default_provider = root["default_provider"].as_string();
     if (root.has("default_models") && root["default_models"].is_object()) {
         for (const auto& [k, v] : root["default_models"].obj_val_) config_.default_models[k] = v.as_string();
     }
@@ -52,27 +44,21 @@ bool ConfigManager::load() {
     if (root.has("custom_endpoints") && root["custom_endpoints"].is_object()) {
         for (const auto& [k, v] : root["custom_endpoints"].obj_val_) config_.custom_endpoints[k] = v.as_string();
     }
+    if (root.has("system_prompt")) config_.system_prompt = root["system_prompt"].as_string();
+    if (root.has("temperature")) config_.temperature = root["temperature"].as_number(0.7);
     return true;
 }
 
 bool ConfigManager::save() {
     Json root = Json::object();
     root["default_provider"] = config_.default_provider;
-
-    Json dm = Json::object();
+    Json dm = Json::object(), ak = Json::object(), ce = Json::object();
     for (const auto& [k, v] : config_.default_models) dm[k] = v;
-    root["default_models"] = dm;
-
-    Json ak = Json::object();
-    for (const auto& [k, v] : config_.api_keys) {
-        ak[k] = crypto::is_encrypted(v) ? v : crypto::encrypt_key(v);
-    }
-    root["api_keys"] = ak;
-
-    Json ce = Json::object();
+    for (const auto& [k, v] : config_.api_keys) ak[k] = crypto::is_encrypted(v) ? v : crypto::encrypt_key(v);
     for (const auto& [k, v] : config_.custom_endpoints) ce[k] = v;
-    root["custom_endpoints"] = ce;
-
+    root["default_models"] = dm; root["api_keys"] = ak; root["custom_endpoints"] = ce;
+    root["system_prompt"] = config_.system_prompt;
+    root["temperature"] = config_.temperature;
     return utils::write_file(config_path_, root.dump(2), true);
 }
 
@@ -83,20 +69,14 @@ void ConfigManager::set_api_key(const std::string& provider, const std::string& 
 bool ConfigManager::delete_api_key(const std::string& provider) {
     auto norm = normalize_provider(provider);
     auto it = config_.api_keys.find(norm);
-    if (it != config_.api_keys.end()) {
-        config_.api_keys.erase(it);
-        return true;
-    }
+    if (it != config_.api_keys.end()) { config_.api_keys.erase(it); return true; }
     return false;
 }
 
 std::optional<std::string> ConfigManager::get_api_key(const std::string& provider) const {
     auto norm = normalize_provider(provider);
     auto it = config_.api_keys.find(norm);
-    if (it != config_.api_keys.end() && !it->second.empty()) {
-        return crypto::decrypt_key(it->second);
-    }
-
+    if (it != config_.api_keys.end() && !it->second.empty()) return crypto::decrypt_key(it->second);
     if (norm == "google") {
         if (auto env = utils::get_env("GEMINI_API_KEY")) return env;
         if (auto env = utils::get_env("GOOGLE_API_KEY")) return env;
@@ -135,5 +115,11 @@ std::optional<std::string> ConfigManager::get_custom_endpoint(const std::string&
     if (it != config_.custom_endpoints.end() && !it->second.empty()) return it->second;
     return std::nullopt;
 }
+
+void ConfigManager::set_system_prompt(const std::string& prompt) { config_.system_prompt = utils::trim(prompt); }
+std::string ConfigManager::get_system_prompt() const { return config_.system_prompt; }
+
+void ConfigManager::set_temperature(double temp) { config_.temperature = temp; }
+double ConfigManager::get_temperature() const { return config_.temperature; }
 
 } // namespace ai

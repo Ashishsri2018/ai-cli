@@ -10,27 +10,16 @@
 - [x] Terminal Styling, ANSI, and TTY UI (`include/ai/terminal.hpp`, `src/terminal.cpp`)
 - [x] CLI Argument Parsing & Command Routing (`include/ai/cli.hpp`, `src/cli.cpp`)
 - [x] Interactive REPL Mode (`include/ai/repl.hpp`, `src/repl.cpp`)
-- [x] Query Runner & Config Handler (`include/ai/query_runner.hpp`, `src/query_runner.cpp`, `src/config_cmd.cpp`)
+- [x] Query Runner & Config Handler (`include/ai/query_runner.hpp`, `src/query_runner.cpp`, `src/config_cmd.cpp`, `src/models_cmd.cpp`)
 - [x] Main Entrypoint (`src/main.cpp`)
 - [x] Dynamic Remote Model Discovery & Provider Selection
-- [x] Bare Flag Listing & Secure API Key Encryption:
-  - [x] Implement self-contained AES/ChaCha crypto & machine-key derivation (`include/ai/crypto.hpp`, `src/crypto.cpp`, `src/crypto_cipher.cpp`)
-  - [x] Update `ConfigManager` to encrypt keys on save and transparently decrypt on load (`src/config.cpp`)
-  - [x] Add `CliMode::ListProviders` and bare `-p` / `-m` flag handling to `src/cli.cpp`
-  - [x] Add `QueryRunner::list_supported_providers` to `src/config_cmd.cpp`
-  - [x] Update `src/main.cpp` for `CliMode::ListProviders`
-  - [x] Add unit tests in `tests/test_crypto.cpp` and `tests/test_cli.cpp` (22/22 tests passing)
-  - [x] Build, test, and install globally with `build.sh`
+- [x] Bare Flag Listing & Secure API Key Encryption
+- [x] System Prompt & Temperature Bare Flags & Persistent Storage:
+  - [x] Add `system_prompt` and `temperature` fields, getters, setters, and JSON serialization to `include/ai/config.hpp` and `src/config.cpp`
+  - [x] Update `include/ai/cli.hpp` and `src/cli.cpp` to support `ShowSystemPrompt`, `SetSystemPrompt`, `ShowTemperature`, `SetTemperature`
+  - [x] Update `src/config_cmd.cpp` to handle printing, setting, and deleting system prompt and temperature
+  - [x] Update `src/query_runner.cpp` and `src/repl.cpp` to use configured default system prompt and temperature
+  - [x] Update `src/main.cpp` for new CLI modes
+  - [x] Add unit tests in `tests/test_config.cpp` and `tests/test_cli.cpp` (31/31 passing)
+  - [x] Run `./build.sh`, verify all unit tests pass, and test live commands (`ai -s`, `ai -s "..."`, `ai -t`, `ai -t 0.3`, `ai "..."`)
   - [x] Update `README.md`, `architecture.md`, `memory.md`, and walkthrough
-- [x] Code Hardening & Robustness Pass:
-  - [x] Fix signed integer overflow UB in SHA-256 (`crypto_cipher.cpp`)
-  - [x] Fix unhandled exception crash on malformed `\uXXXX` (`json_parse.cpp`)
-  - [x] Fix float-to-int UB in JSON dumper (`json_dump.cpp`)
-  - [x] Fix locale-dependent number parsing with `std::from_chars` (`json_parse.cpp`)
-  - [x] Fix TOCTOU file permission race (`utils.cpp`)
-  - [x] Fix fragile API key/provider detection (`config_cmd.cpp`)
-  - [x] Add `curl_global_cleanup` and `std::call_once` (`http_client.cpp`)
-  - [x] Add top-level exception handler (`main.cpp`)
-  - [x] Fix Anthropic system role handling (`provider_anthropic.cpp`)
-  - [x] Add 8 new test cases (30/30 tests passing)
-

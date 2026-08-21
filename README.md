@@ -11,10 +11,14 @@ A lightweight, ultra-fast, dependency-free CLI client written in modern C++17 to
   - Automatically encrypts all API keys using hardware/user-bound key derivation and stream encryption (`enc:v1:...`).
   - Stored in `~/.config/ai/config.json` with strict `0600` permissions.
   - Transparent in-memory decryption when executing requests.
-- **Bare Flag Provider & Model Discovery**:
+- **Bare Flag Inspection & Configuration**:
   - `ai -p` or `ai --provider`: Lists all supported providers and highlights the active default.
-  - `ai -m` or `ai --model`: Queries the API and lists all available models for the current default provider.
-  - `ai -p google -m`: Queries the Google API and lists all models for Google.
+  - `ai -m` or `ai --model`: Lists all available models for the current default provider.
+  - `ai -p google -m`: Lists all models for Google.
+  - `ai -s` or `ai --system`: Displays the currently configured system prompt.
+  - `ai -s "<prompt>"`: Persistently saves the default system prompt to `~/.config/ai/config.json`.
+  - `ai -t` or `ai --temperature`: Displays the currently configured default temperature.
+  - `ai -t <val>`: Persistently saves the default temperature to `~/.config/ai/config.json`.
 - **Multi-Cloud Provider Support**:
   - **Google Gemini** (`gemini-3.6-flash`, `gemini-3.7-flash`, `gemini-2.5-flash-lite`, etc.)
   - **OpenAI** (`gpt-4o-mini`, `gpt-4o`, `o3-mini`, etc.)
@@ -47,56 +51,55 @@ make test
 
 ---
 
-## Bare Flag Quick Inspection & Discovery
+## Bare Flag Quick Inspection & Configuration
 
-### 1. Listing Supported Providers
-Run `-p` with no arguments to list all supported providers and view the active default:
+### 1. System Prompt (`-s`)
 ```bash
-ai -p
+# View currently configured system prompt
+ai -s
 # or
-ai --provider
-```
-*Output:*
-```text
-Supported LLM Providers:
-  * google (current default)
-  - openai
-  - anthropic
-  - groq
-  - deepseek
-  - ollama
-  - custom
+ai --system
 
-To change default provider: ai --set provider <name>
-To list models for a provider: ai -p <provider> -m
+# Persistently store a new default system prompt in ~/.config/ai/config.json
+ai -s "Omit conversational filler."
+
+# All future queries automatically use this prompt:
+ai "What is the capital of France?"
+# Output: Paris
+
+# One-off override for a single query (does not change the default in config):
+ai -s "You are a poet." "What is 2+2?"
 ```
 
 ---
 
-### 2. Listing Available Models for Your Key
-Run `-m` with no arguments to query the remote API and list all accessible models:
+### 2. Temperature (`-t`)
 ```bash
-# List models for current default provider
-ai -m
+# View currently configured temperature
+ai -t
 # or
-ai --model
+ai --temperature
+
+# Persistently store a new default temperature in ~/.config/ai/config.json
+ai -t 0.3
+
+# One-off override for a single query:
+ai -t 0.9 "Brainstorm 3 creative startup names"
+```
+
+---
+
+### 3. Providers (`-p`) & Models (`-m`)
+```bash
+# List supported providers and view active default
+ai -p
+
+# List models for default provider
+ai -m
 
 # List models for a specific provider
 ai -p google -m
 ai -p openai -m
-ai -p anthropic -m
-```
-*Output:*
-```text
-Fetching models from google API...
-Available models for provider 'google':
-  * gemini-3.6-flash (current default)
-  - gemini-3.7-flash
-  - gemini-3.5-flash
-  - gemini-3.1-flash-lite
-  - gemini-2.5-flash-lite
-
-To change default model: ai --set model <name> google
 ```
 
 ---
@@ -122,7 +125,7 @@ ai --set api "gsk_..." "groq"
 ai --set api "sk-..." "deepseek"
 ```
 
-### 2. Changing Default Provider & Models
+### 2. Changing Defaults
 ```bash
 # Set default model for a provider
 ai --set model gemini-3.6-flash google
@@ -131,16 +134,24 @@ ai --set model gpt-4o openai
 # Set default provider (used when no -p flag is passed)
 ai --set provider google
 ai --set provider openai
+
+# Set default system prompt
+ai --set system "Be concise and clear."
+
+# Set default temperature
+ai --set temp 0.5
 ```
 
-### 3. Listing Configured Keys & Providers
+### 3. Listing & Deleting Configuration
 ```bash
+# List all configuration settings
 ai --list
-```
 
-### 4. Deleting an API Key
-```bash
+# Delete an API key
 ai --del api "openai"
+
+# Clear default system prompt
+ai --del system
 ```
 
 ---
@@ -151,7 +162,7 @@ ai --del api "openai"
 
 Ask questions directly from your terminal:
 ```bash
-# Using default provider and model
+# Using default provider, model, and system prompt
 ai "What is the capital of France?"
 
 # Specify a provider
@@ -161,7 +172,7 @@ ai -p openai "Explain quantum computing in 2 sentences"
 ai -p google -m gemini-3.6-flash "What is 15 * 12?"
 ai -p anthropic -m claude-3-5-haiku-20241022 "Write a python function to reverse a linked list"
 
-# Provide a custom system prompt
+# Provide a one-off system prompt
 ai -s "You are a Linux kernel engineer. Be concise." "Why is eBPF useful?"
 
 # Adjust sampling temperature (0.0 to 2.0)
@@ -207,7 +218,7 @@ ai -p openai -m gpt-4o --chat
 Type your message. Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /help, quit.
 
 > What is the capital of France?
-Paris is the capital of France.
+Paris
 
 > /models
 Fetching models for google...
@@ -217,11 +228,6 @@ Fetching models for google...
 
 > /model gemini-3.7-flash
 ✓ Switched model to: gemini-3.7-flash
-
-> Give me 3 must-visit landmarks there.
-1. The Eiffel Tower
-2. The Louvre Museum
-3. Notre-Dame Cathedral
 
 > /clear
 ✓ Conversation history cleared.
@@ -236,16 +242,16 @@ Goodbye!
 
 | Flag | Short | Description | Example |
 | :--- | :--- | :--- | :--- |
+| `-s [prompt]`, `--system [prompt]` | `-s` | Show prompt (if empty), set default (no query), or use one-off (with query) | `ai -s` or `ai -s "Omit filler."` |
+| `-t [val]`, `--temperature [val]` | `-t` | Show temp (if empty), set default (no query), or use one-off (with query) | `ai -t` or `ai -t 0.3` |
 | `-p [name]`, `--provider [name]` | `-p` | Select provider, or **list providers** if name omitted | `ai -p` or `ai -p google "hi"` |
 | `-m [name]`, `--model [name]` | `-m` | Select model, or **list models** if name omitted | `ai -m` or `ai -p google -m` |
 | `--models [provider]` | | Fetch and list available models from provider API | `ai --models google` |
-| `--system <prompt>` | `-s` | Provide system instruction prompt | `ai -s "Be brief" "hello"` |
-| `--temperature <val>`| `-t` | Sampling temperature (default: `0.7`) | `ai -t 0.3 "hello"` |
 | `--chat` | `-c` | Start interactive multi-turn REPL chat | `ai -c` |
 | `--no-stream` | | Disable real-time token streaming | `ai --no-stream "hello"` |
 | `--raw`, `--no-color`| | Disable ANSI terminal colors (useful for pipelines) | `ai --raw "hello"` |
-| `--set <args...>` | | Configure settings (`api`, `model`, `provider`) | `ai --set model gemini-3.6-flash google` |
-| `--del <args...>` | | Remove settings | `ai --del api "openai"` |
+| `--set <args...>` | | Configure settings (`api`, `model`, `provider`, `system`, `temp`) | `ai --set system "Be brief."` |
+| `--del <args...>` | | Remove settings (`api`, `system`) | `ai --del system` |
 | `--list` | `-l` | Display current configuration and keys | `ai --list` |
 | `--help` | `-h` | Display help screen | `ai --help` |
 | `--version` | `-v` | Display version information | `ai --version` |
@@ -258,11 +264,12 @@ Goodbye!
 make test
 ```
 
-Test coverage:
+Test coverage (31 unit tests):
 - Self-contained SHA-256 and Base64 cryptographic routines
 - AES/ChaCha stream cipher key encryption & decryption with machine-binding
 - Encrypted configuration persistence & transparent decryption
-- Bare flag parsing (`ai -p`, `ai -m`, `ai -p google -m`)
+- System prompt and temperature persistence and bare flag handling
+- Bare flag parsing (`ai -p`, `ai -m`, `ai -s`, `ai -t`, `ai -p google -m`)
 - Remote model listing JSON decoding across Google Gemini, OpenAI, and Anthropic
 - Multi-turn chat session history tracking
 - Gemini, OpenAI, and Anthropic request payload construction & response extraction

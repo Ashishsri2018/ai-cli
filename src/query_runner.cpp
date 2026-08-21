@@ -23,7 +23,9 @@ void QueryRunner::run_single_query(ConfigManager& cm, IHttpClient& http_client, 
     if (!provider) { term::print_error("Unsupported provider: " + prov_name); return; }
 
     std::string model = args.model.empty() ? cm.get_default_model(prov_name) : args.model;
-    ChatSession session(args.system_prompt);
+    std::string sys_prompt = args.has_system_prompt ? args.system_prompt : cm.get_system_prompt();
+    double temp = args.has_temperature ? args.temperature : cm.get_temperature();
+    ChatSession session(sys_prompt);
 
     std::string full_query = args.query;
     if (!args.stdin_content.empty()) {
@@ -33,8 +35,8 @@ void QueryRunner::run_single_query(ConfigManager& cm, IHttpClient& http_client, 
 
     RequestOptions opt;
     opt.model = model;
-    opt.system_prompt = args.system_prompt;
-    opt.temperature = args.temperature;
+    opt.system_prompt = sys_prompt;
+    opt.temperature = temp;
     opt.stream = args.stream;
 
     std::string url = provider->get_endpoint(model, api_key, opt.stream);

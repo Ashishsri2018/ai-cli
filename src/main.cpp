@@ -18,7 +18,9 @@ int main(int argc, char* argv[]) {
     ConfigManager cm;
     CurlHttpClient http_client;
 
-    if (args.mode == CliMode::ListConfig || args.mode == CliMode::SetConfig || args.mode == CliMode::DelConfig) {
+    if (args.mode == CliMode::ListConfig || args.mode == CliMode::SetConfig || args.mode == CliMode::DelConfig ||
+        args.mode == CliMode::ShowSystemPrompt || args.mode == CliMode::SetSystemPrompt ||
+        args.mode == CliMode::ShowTemperature || args.mode == CliMode::SetTemperature) {
         QueryRunner::handle_config_command(cm, args);
         return 0;
     }
@@ -36,8 +38,8 @@ int main(int argc, char* argv[]) {
     if (args.mode == CliMode::Chat) {
         RequestOptions opt;
         opt.model = args.model;
-        opt.system_prompt = args.system_prompt;
-        opt.temperature = args.temperature;
+        opt.system_prompt = args.has_system_prompt ? args.system_prompt : cm.get_system_prompt();
+        opt.temperature = args.has_temperature ? args.temperature : cm.get_temperature();
         opt.stream = args.stream;
         ReplSession repl(cm, http_client, opt);
         repl.run();

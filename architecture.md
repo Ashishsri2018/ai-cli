@@ -1,7 +1,7 @@
 # Architecture Documentation: AI Terminal Client (`ai`)
 
 ## Overview
-`ai` is a lightweight, dependency-free C++17 command-line tool for interfacing with cloud Large Language Models (LLMs). It provides a unified terminal interface for single queries, shell pipelines, and continuous multi-turn interactive chat sessions across multiple LLM providers, complete with dynamic remote model discovery, bare-flag inspection, and machine-bound encrypted key storage.
+`ai` is a lightweight, dependency-free C++17 command-line tool for interfacing with cloud Large Language Models (LLMs). It provides a unified terminal interface for single queries, shell pipelines, and continuous multi-turn interactive chat sessions across multiple LLM providers, complete with dynamic remote model discovery, bare-flag inspection, persistent system prompts/temperature, and machine-bound encrypted key storage.
 
 ## System Architecture
 
@@ -13,8 +13,8 @@ graph TD
     ROUTE --> |Single Query / Pipe| EXEC_SINGLE[QueryRunner: query_runner.cpp]
     ROUTE --> |Interactive Chat| EXEC_REPL[REPL Interactive Mode: repl.cpp]
     ROUTE --> |Config Operations| EXEC_CFG[Config Commands: config_cmd.cpp]
-    ROUTE --> |Model Discovery| EXEC_MODELS[QueryRunner::list_provider_models: config_cmd.cpp]
-    ROUTE --> |Provider Listing| EXEC_PROVS[QueryRunner::list_supported_providers: config_cmd.cpp]
+    ROUTE --> |Model Discovery| EXEC_MODELS[QueryRunner::list_provider_models: models_cmd.cpp]
+    ROUTE --> |Provider Listing| EXEC_PROVS[QueryRunner::list_supported_providers: models_cmd.cpp]
     
     CFG --> |Encrypt / Decrypt| CRYPTO[Crypto Engine: crypto.cpp / crypto_cipher.cpp]
     
@@ -42,7 +42,7 @@ graph TD
 2. **`types.hpp`**: Common types (`ChatMessage`, `Role`, `RequestOptions`, `HttpResponse`, `StreamCallback`).
 3. **`json.hpp` / `json_dump.cpp` / `json_parse.cpp`**: Zero-dependency RFC 8259 JSON parser and serializer with clean C++ interface.
 4. **`utils.hpp` / `utils.cpp`**: Path resolution, home directory detection, secure file permissions (0600), string trimming, environment variable lookups.
-5. **`config.hpp` / `config.cpp`**: Encrypted configuration loading and persistence to `~/.config/ai/config.json`.
+5. **`config.hpp` / `config.cpp`**: Encrypted configuration loading and persistence to `~/.config/ai/config.json`, storing default provider, models, API keys, system prompt, and temperature.
 6. **`session.hpp` / `session.cpp`**: Conversation history state management, message appending, context trimming.
 7. **`http_client.hpp` / `http_client.cpp`**: Libcurl abstraction supporting GET, POST, and real-time SSE streaming callbacks.
 8. **`provider.hpp` / `provider.cpp`**: Base interface `LLMProvider` with `list_models` and factory method `create`.
@@ -50,8 +50,9 @@ graph TD
 10. **`provider_openai.hpp` / `provider_openai.cpp`**: OpenAI / OpenAI-compatible REST API implementation (Groq, DeepSeek, Ollama, custom base URLs, `models` list).
 11. **`provider_anthropic.hpp` / `provider_anthropic.cpp`**: Anthropic Claude REST API implementation (`messages`, `models` list).
 12. **`terminal.hpp` / `terminal.cpp`**: ANSI color formatting, TTY detection, banner display.
-13. **`cli.hpp` / `cli.cpp`**: Command-line flag parsing with bare flag support (`ai -p`, `ai -m`, `ai -p google -m`).
+13. **`cli.hpp` / `cli.cpp`**: Command-line flag parsing with bare flag support (`ai -p`, `ai -m`, `ai -s`, `ai -t`, `ai -p google -m`).
 14. **`repl.hpp` / `repl.cpp`**: Interactive prompt loop, multiline input, in-chat slash commands (`/clear`, `/models`, `/model`, `/provider`, `/system`, `/help`, `/history`, `quit`).
-15. **`query_runner.hpp` / `query_runner.cpp`**: Single query execution.
-16. **`config_cmd.cpp`**: Config setting, listing, deletion, provider listing, and remote model listing.
-17. **`main.cpp`**: Entry point orchestrating CLI parsing and mode dispatch.
+15. **`query_runner.hpp` / `query_runner.cpp`**: Single query execution inheriting persistent defaults.
+16. **`config_cmd.cpp`**: Config setting, listing, deletion, system prompt and temperature inspection.
+17. **`models_cmd.cpp`**: Remote model listing and provider catalog.
+18. **`main.cpp`**: Entry point orchestrating CLI parsing and mode dispatch.

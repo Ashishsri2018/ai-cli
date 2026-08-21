@@ -32,3 +32,19 @@ AI_TEST(ConfigKeyManagement) {
     // Since environment variable might not be set in test, verify config key deletion
     ASSERT_TRUE(cm3.get_config().api_keys.find("openai") == cm3.get_config().api_keys.end());
 }
+
+AI_TEST(ConfigSystemPromptAndTemperature) {
+    std::string temp_cfg = "/tmp/ai_test_sys_temp.json";
+    ConfigManager cm(temp_cfg);
+
+    ASSERT_STREQ(cm.get_system_prompt().c_str(), "");
+    ASSERT_NEAR(cm.get_temperature(), 0.7, 0.001);
+
+    cm.set_system_prompt("Omit conversational filler.");
+    cm.set_temperature(0.35);
+    ASSERT_TRUE(cm.save());
+
+    ConfigManager cm2(temp_cfg);
+    ASSERT_STREQ(cm2.get_system_prompt().c_str(), "Omit conversational filler.");
+    ASSERT_NEAR(cm2.get_temperature(), 0.35, 0.001);
+}

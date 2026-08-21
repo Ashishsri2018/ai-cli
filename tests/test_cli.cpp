@@ -67,4 +67,29 @@ AI_TEST(CliParserBareFlags) {
     CliArgs args_pm = CliParser::parse(4, const_cast<char**>(argv_pm));
     ASSERT_EQ(static_cast<int>(args_pm.mode), static_cast<int>(CliMode::ListModels));
     ASSERT_STREQ(args_pm.provider.c_str(), "google");
+
+    const char* argv_s[] = {"ai", "-s"};
+    CliArgs args_s = CliParser::parse(2, const_cast<char**>(argv_s));
+    ASSERT_EQ(static_cast<int>(args_s.mode), static_cast<int>(CliMode::ShowSystemPrompt));
+
+    const char* argv_t[] = {"ai", "-t"};
+    CliArgs args_t = CliParser::parse(2, const_cast<char**>(argv_t));
+    ASSERT_EQ(static_cast<int>(args_t.mode), static_cast<int>(CliMode::ShowTemperature));
+
+    const char* argv_set_s[] = {"ai", "-s", "Omit conversational filler."};
+    CliArgs args_set_s = CliParser::parse(3, const_cast<char**>(argv_set_s));
+    ASSERT_EQ(static_cast<int>(args_set_s.mode), static_cast<int>(CliMode::SetSystemPrompt));
+    ASSERT_STREQ(args_set_s.system_prompt.c_str(), "Omit conversational filler.");
+
+    const char* argv_set_t[] = {"ai", "-t", "0.3"};
+    CliArgs args_set_t = CliParser::parse(3, const_cast<char**>(argv_set_t));
+    ASSERT_EQ(static_cast<int>(args_set_t.mode), static_cast<int>(CliMode::SetTemperature));
+    ASSERT_NEAR(args_set_t.temperature, 0.3, 0.001);
+
+    const char* argv_query_s[] = {"ai", "-s", "Be brief", "capital", "of", "france"};
+    CliArgs args_query_s = CliParser::parse(6, const_cast<char**>(argv_query_s));
+    ASSERT_EQ(static_cast<int>(args_query_s.mode), static_cast<int>(CliMode::Query));
+    ASSERT_TRUE(args_query_s.has_system_prompt);
+    ASSERT_STREQ(args_query_s.system_prompt.c_str(), "Be brief");
+    ASSERT_STREQ(args_query_s.query.c_str(), "capital of france");
 }

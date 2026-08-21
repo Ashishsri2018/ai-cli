@@ -20,6 +20,7 @@ SRCS = src/utils.cpp \
        src/repl.cpp \
        src/query_runner.cpp \
        src/config_cmd.cpp \
+       src/models_cmd.cpp \
        src/crypto.cpp \
        src/crypto_cipher.cpp
 

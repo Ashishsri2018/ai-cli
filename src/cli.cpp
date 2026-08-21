@@ -77,10 +77,20 @@ CliArgs CliParser::parse(int argc, char* argv[]) {
             } else {
                 args.mode = CliMode::ListModels;
             }
-        } else if ((arg == "-s" || arg == "--system") && i + 1 < argc) {
-            args.system_prompt = argv[++i];
-        } else if ((arg == "-t" || arg == "--temperature") && i + 1 < argc) {
-            args.temperature = std::stod(argv[++i]);
+        } else if (arg == "-s" || arg == "--system") {
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                args.system_prompt = argv[++i];
+                args.has_system_prompt = true;
+            } else {
+                args.mode = CliMode::ShowSystemPrompt;
+            }
+        } else if (arg == "-t" || arg == "--temperature") {
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                args.temperature = std::stod(argv[++i]);
+                args.has_temperature = true;
+            } else {
+                args.mode = CliMode::ShowTemperature;
+            }
         } else if (arg == "-c" || arg == "--chat") {
             force_chat = true;
         } else if (arg == "--no-stream") {
@@ -93,7 +103,8 @@ CliArgs CliParser::parse(int argc, char* argv[]) {
         }
     }
 
-    if (args.mode == CliMode::ListProviders || args.mode == CliMode::ListModels) {
+    if (args.mode == CliMode::ListProviders || args.mode == CliMode::ListModels ||
+        args.mode == CliMode::ShowSystemPrompt || args.mode == CliMode::ShowTemperature) {
         return args;
     }
 
@@ -101,8 +112,14 @@ CliArgs CliParser::parse(int argc, char* argv[]) {
         read_stdin_if_piped(args);
     }
 
-    if (force_chat || (args.query.empty() && args.stdin_content.empty())) {
-        args.mode = CliMode::Chat;
+    if (args.query.empty() && args.stdin_content.empty()) {
+        if (args.has_system_prompt) {
+            args.mode = CliMode::SetSystemPrompt;
+        } else if (args.has_temperature) {
+            args.mode = CliMode::SetTemperature;
+        } else {
+            args.mode = CliMode::Chat;
+        }
     } else {
         args.mode = CliMode::Query;
     }

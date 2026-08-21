@@ -12,6 +12,8 @@ struct Config {
     std::map<std::string, std::string> default_models;
     std::map<std::string, std::string> api_keys;
     std::map<std::string, std::string> custom_endpoints;
+    std::string system_prompt{""};
+    double temperature{0.7};
 };
 
 class ConfigManager {
@@ -34,6 +36,12 @@ public:
 
     void set_custom_endpoint(const std::string& provider, const std::string& url);
     std::optional<std::string> get_custom_endpoint(const std::string& provider) const;
+
+    void set_system_prompt(const std::string& prompt);
+    std::string get_system_prompt() const;
+
+    void set_temperature(double temp);
+    double get_temperature() const;
 
     const Config& get_config() const { return config_; }
     static std::string normalize_provider(const std::string& provider);
