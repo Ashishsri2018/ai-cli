@@ -1,0 +1,24 @@
+# Todo List: C++ Cloud LLM Terminal Client (`ai`)
+
+- [x] Initialize project structure and documentation (`architecture.md`, `styleguide.md`, `scratchpad.md`, `memory.md`, `Makefile`)
+- [x] Core Data Structures & JSON Library (`include/ai/types.hpp`, `include/ai/json.hpp`, `src/json_dump.cpp`, `src/json_parse.cpp`)
+- [x] Utility Functions & OS Helpers (`include/ai/utils.hpp`, `src/utils.cpp`)
+- [x] Config & Key Management (`include/ai/config.hpp`, `src/config.cpp`)
+- [x] Chat Session & History Management (`include/ai/session.hpp`, `src/session.cpp`)
+- [x] HTTP/HTTPS Client & SSE Stream Decoder (`include/ai/http_client.hpp`, `src/http_client.cpp`)
+- [x] LLM Provider Interface & Implementations (Google, OpenAI, Anthropic, Groq, DeepSeek, Ollama)
+- [x] Terminal Styling, ANSI, and TTY UI (`include/ai/terminal.hpp`, `src/terminal.cpp`)
+- [x] CLI Argument Parsing & Command Routing (`include/ai/cli.hpp`, `src/cli.cpp`)
+- [x] Interactive REPL Mode (`include/ai/repl.hpp`, `src/repl.cpp`)
+- [x] Query Runner & Config Handler (`include/ai/query_runner.hpp`, `src/query_runner.cpp`, `src/config_cmd.cpp`)
+- [x] Main Entrypoint (`src/main.cpp`)
+- [x] Dynamic Remote Model Discovery & Provider Selection
+- [x] Bare Flag Listing & Secure API Key Encryption:
+  - [x] Implement self-contained AES/ChaCha crypto & machine-key derivation (`include/ai/crypto.hpp`, `src/crypto.cpp`, `src/crypto_cipher.cpp`)
+  - [x] Update `ConfigManager` to encrypt keys on save and transparently decrypt on load (`src/config.cpp`)
+  - [x] Add `CliMode::ListProviders` and bare `-p` / `-m` flag handling to `src/cli.cpp`
+  - [x] Add `QueryRunner::list_supported_providers` to `src/config_cmd.cpp`
+  - [x] Update `src/main.cpp` for `CliMode::ListProviders`
+  - [x] Add unit tests in `tests/test_crypto.cpp` and `tests/test_cli.cpp` (22/22 tests passing)
+  - [x] Build, test, and install globally with `build.sh`
+  - [x] Update `README.md`, `architecture.md`, `memory.md`, and walkthrough
