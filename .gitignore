@@ -1,0 +1,12 @@
+# Binaries
+ai
+run_tests
+
+# Object files
+*.o
+src/*.o
+tests/*.o
+
+# Test and temporary artifacts
+/tmp/ai_test*
+.DS_Store

@@ -23,3 +23,5 @@
   - [x] Add unit tests in `tests/test_config.cpp` and `tests/test_cli.cpp` (31/31 passing)
   - [x] Run `./build.sh`, verify all unit tests pass, and test live commands (`ai -s`, `ai -s "..."`, `ai -t`, `ai -t 0.3`, `ai "..."`)
   - [x] Update `README.md`, `architecture.md`, `memory.md`, and walkthrough
+- [x] Create and push remote GitHub repository via `gh` CLI
+

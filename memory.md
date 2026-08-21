@@ -18,5 +18,7 @@ Building a dependency-free, high-performance C++17 CLI client for cloud LLMs (Go
   - Updated default Gemini model fallback to `gemini-3.6-flash`.
   - Created automated test suite (`run_tests`) with 31/31 unit tests passing across crypto, JSON, config, sessions, providers, and CLI parsing.
   - Verified 100% compliance with modular architecture rules (all source files under 150 lines).
-  - Moved legacy/unrelated Python scripts (`agent.py`, `script.py`, `tui_app.py`), text files, and `venv` outside the project folder to `/root/workspace2/harness_python_archive`.
   - Created comprehensive `README.md` documenting installation, configuration, single queries, stdin piping, REPL interactive commands, bare flag discovery, system prompt / temperature persistence, and flag reference.
+  - Added `.gitignore` to prevent tracking compiled binaries (`ai`, `run_tests`) and intermediate object files (`*.o`).
+  - Created remote GitHub repository and pushed `master` branch via `gh repo create`.
+

@@ -55,6 +55,7 @@ AI_TEST(CryptoEncryptDecryptRoundtrip) {
 
 AI_TEST(ConfigEncryptedStorage) {
     std::string path = "/tmp/ai_test_enc_cfg.json";
+    std::remove(path.c_str());
     ConfigManager cm(path);
     std::string secret = "sk-proj-secret-key-123";
     cm.set_api_key("openai", secret);

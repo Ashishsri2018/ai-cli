@@ -5,6 +5,7 @@ using namespace ai;
 
 AI_TEST(ConfigKeyManagement) {
     std::string temp_cfg = "/tmp/ai_test_config.json";
+    std::remove(temp_cfg.c_str());
     ConfigManager cm(temp_cfg);
 
     cm.set_api_key("openai", "sk-test-key-12345");
@@ -35,6 +36,7 @@ AI_TEST(ConfigKeyManagement) {
 
 AI_TEST(ConfigSystemPromptAndTemperature) {
     std::string temp_cfg = "/tmp/ai_test_sys_temp.json";
+    std::remove(temp_cfg.c_str());
     ConfigManager cm(temp_cfg);
 
     ASSERT_STREQ(cm.get_system_prompt().c_str(), "");
