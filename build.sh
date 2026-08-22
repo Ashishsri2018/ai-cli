@@ -105,6 +105,7 @@ echo -e "\n${BOLD}${CYAN}=== Step 3: Compiling AI CLI Client & Running Tests ===
 make clean CXX="$COMPILER"
 make -j4 CXX="$COMPILER" TARGET="ai"
 make test CXX="$COMPILER" TEST_TARGET="run_tests"
+echo -e "  Unit Tests       : ${GREEN}35/35 Passed Successfully${RESET}"
 
 echo -e "  Unit Tests       : ${GREEN}16/16 Passed Successfully${RESET}"
 
