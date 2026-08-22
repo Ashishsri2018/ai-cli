@@ -35,6 +35,11 @@ int main(int argc, char* argv[]) {
         return 0;
     }
 
+    if (args.mode == CliMode::CheckQuota) {
+        QueryRunner::check_provider_quota(cm, http_client, args.provider);
+        return 0;
+    }
+
     if (args.mode == CliMode::Chat) {
         RequestOptions opt;
         opt.model = args.model;

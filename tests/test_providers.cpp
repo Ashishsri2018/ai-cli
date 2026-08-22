@@ -109,7 +109,7 @@ AI_TEST(AnthropicStreamChunkProcessing) {
     std::string buffer;
     std::string collected;
 
-    auto cb = [&](const std::string& token) { collected += token; };
+    StreamCallback cb = [&](const std::string& token) { collected += token; };
 
     // Simulate SSE chunks arriving
     std::string sse_data = "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Hi\"}}\n\n"
@@ -222,3 +222,64 @@ AI_TEST(AnthropicUsageExtraction) {
     ASSERT_EQ(stream_usage.total_tokens, 50);
     ASSERT_EQ(stream_usage.cached_tokens, 5);
 }
+
+AI_TEST(DeepSeekQuotaCheck) {
+    auto p = ProviderFactory::create("deepseek");
+    MockHttpClient mock;
+    mock.mock_resp.success = true;
+    mock.mock_resp.status_code = 200;
+    mock.mock_resp.body = R"({
+        "is_available": true,
+        "balance_infos": [
+            {
+                "currency": "USD",
+                "total_balance": "15.4200",
+                "granted_balance": "5.0000",
+                "topped_up_balance": "10.4200"
+            }
+        ]
+    })";
+
+    QuotaInfo q = p->check_quota(mock, "sk-deepseek-key");
+    ASSERT_TRUE(q.supported);
+    ASSERT_TRUE(q.success);
+    ASSERT_STREQ(q.currency.c_str(), "USD");
+    ASSERT_STREQ(q.total_balance.c_str(), "15.4200");
+    ASSERT_STREQ(q.granted_balance.c_str(), "5.0000");
+    ASSERT_STREQ(q.topped_up_balance.c_str(), "10.4200");
+    ASSERT_STREQ(q.status.c_str(), "Active");
+}
+
+AI_TEST(OpenRouterQuotaCheck) {
+    auto p = ProviderFactory::create("openrouter");
+    MockHttpClient mock;
+    mock.mock_resp.success = true;
+    mock.mock_resp.status_code = 200;
+    mock.mock_resp.body = R"({
+        "data": {
+            "total_credits": 25.50,
+            "total_usage": 5.25
+        }
+    })";
+
+    QuotaInfo q = p->check_quota(mock, "sk-or-v1-key");
+    ASSERT_TRUE(q.supported);
+    ASSERT_TRUE(q.success);
+    ASSERT_STREQ(q.currency.c_str(), "USD");
+    ASSERT_STREQ(q.total_balance.c_str(), "20.2500");
+    ASSERT_STREQ(q.total_usage.c_str(), "5.2500");
+}
+
+AI_TEST(GeminiQuotaCheck) {
+    auto p = ProviderFactory::create("google");
+    MockHttpClient mock;
+    mock.mock_resp.success = true;
+    mock.mock_resp.status_code = 200;
+    mock.mock_resp.body = R"({"models":[{"name":"models/gemini-2.5-flash"}]})";
+
+    QuotaInfo q = p->check_quota(mock, "AIzaSyFakeKey");
+    ASSERT_TRUE(q.success);
+    ASSERT_STREQ(q.status.c_str(), "Active");
+    ASSERT_TRUE(!q.console_url.empty());
+}
+

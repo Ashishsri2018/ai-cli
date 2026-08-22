@@ -73,6 +73,39 @@ void print_usage(const UsageInfo& usage) {
               << " tokens | Total: " << colorize(std::to_string(usage.total_tokens), Color::Green) << " tokens\n";
 }
 
+void print_quota(const QuotaInfo& q) {
+    std::cout << colorize("=== Quota & Balance: " + q.provider + " ===", Color::Bold) << "\n";
+    if (!q.status.empty()) {
+        std::cout << "Status        : " << (q.success ? colorize(q.status, Color::Green) : colorize(q.status, Color::Red)) << "\n";
+    }
+    if (!q.total_balance.empty()) {
+        std::string curr = q.currency.empty() ? "" : (" " + q.currency);
+        std::cout << "Total Balance : " << colorize(q.total_balance + curr, Color::Bold) << "\n";
+    }
+    if (!q.granted_balance.empty()) {
+        std::cout << "Granted Credit: " << colorize(q.granted_balance, Color::Cyan) << "\n";
+    }
+    if (!q.topped_up_balance.empty()) {
+        std::cout << "Top-up Balance: " << colorize(q.topped_up_balance, Color::Cyan) << "\n";
+    }
+    if (!q.total_usage.empty()) {
+        std::cout << "Total Usage   : " << colorize(q.total_usage, Color::Yellow) << "\n";
+    }
+    if (!q.limit.empty()) {
+        std::cout << "Usage Limit   : " << colorize(q.limit, Color::Yellow) << "\n";
+    }
+    if (!q.info_message.empty()) {
+        std::cout << "Information   : " << colorize(q.info_message, Color::Dim) << "\n";
+    }
+    if (!q.error_message.empty()) {
+        std::cout << "Error Details : " << colorize(q.error_message, Color::Red) << "\n";
+    }
+    if (!q.console_url.empty()) {
+        std::cout << "Console URL   : " << colorize(q.console_url, Color::Cyan) << "\n";
+    }
+    std::cout << "\n";
+}
+
 void print_help() {
     std::cout << colorize("AI Terminal Client (C++ Edition)", Color::Bold) << "\n\n"
               << colorize("USAGE:", Color::Yellow) << "\n"
@@ -90,6 +123,7 @@ void print_help() {
               << "  -s, --system <prompt>   Set custom system prompt\n"
               << "  -t, --temperature <val> Set temperature (default: 0.7)\n"
               << "  -u, --usage             Display API token usage statistics\n"
+              << "  -q, --quota [provider]  Check account quota, credit balance & billing status\n"
               << "  -c, --chat              Force interactive chat mode\n"
               << "  --no-stream             Disable real-time streaming\n"
               << "  --raw, --no-color       Disable ANSI color codes\n"

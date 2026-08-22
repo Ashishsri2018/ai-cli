@@ -66,7 +66,6 @@ std::string OpenAIProvider::extract_response_text(const std::string& response_js
     return "";
 }
 
-void OpenAIProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback) {
 UsageInfo OpenAIProvider::extract_usage(const std::string& response_json) const {
     UsageInfo usage;
     std::string err;
@@ -139,6 +138,111 @@ std::vector<std::string> OpenAIProvider::list_models(IHttpClient& client, const 
         if (!id.empty()) models.push_back(id);
     }
     return models;
+}
+
+QuotaInfo OpenAIProvider::check_quota(IHttpClient& client, const std::string& api_key) {
+    QuotaInfo q;
+    q.provider = name_;
+
+    if (name_ == "ollama") {
+        q.supported = true;
+        q.success = true;
+        q.status = "Local";
+        q.info_message = "Local model runner (no API quota or credit limit).";
+        return q;
+    }
+
+    if (api_key.empty()) {
+        q.success = false;
+        q.error_message = "No API key configured for provider '" + name_ + "'.";
+        return q;
+    }
+
+    auto headers = get_headers(api_key);
+
+    if (name_ == "deepseek") {
+        q.console_url = "https://platform.deepseek.com/top_up";
+        std::string url = "https://api.deepseek.com/user/balance";
+        HttpResponse resp = client.get(url, headers);
+        if (resp.success) {
+            std::string err;
+            Json root = Json::parse(resp.body, err);
+            if (err.empty() && root.is_object()) {
+                q.supported = true;
+                q.success = true;
+                bool is_avail = root.get("is_available").as_bool(true);
+                q.status = is_avail ? "Active" : "Unavailable / Low Balance";
+                const auto& arr = root.get("balance_infos");
+                if (arr.is_array() && arr.size() > 0) {
+                    const auto& info = arr[0];
+                    q.currency = info.get("currency").as_string("USD");
+                    q.total_balance = info.get("total_balance").as_string();
+                    q.granted_balance = info.get("granted_balance").as_string();
+                    q.topped_up_balance = info.get("topped_up_balance").as_string();
+                }
+                return q;
+            }
+        }
+        q.success = false;
+        q.error_message = !resp.error.empty() ? resp.error : ("HTTP " + std::to_string(resp.status_code) + " - " + resp.body);
+        return q;
+    }
+
+    if (name_ == "openrouter" || base_url_.find("openrouter.ai") != std::string::npos) {
+        q.console_url = "https://openrouter.ai/credits";
+        std::string url = "https://openrouter.ai/api/v1/credits";
+        HttpResponse resp = client.get(url, headers);
+        if (resp.success) {
+            std::string err;
+            Json root = Json::parse(resp.body, err);
+            if (err.empty() && root.is_object() && root.has("data")) {
+                q.supported = true;
+                q.success = true;
+                q.status = "Active";
+                q.currency = "USD";
+                const auto& data = root.get("data");
+                double credits = data.get("total_credits").as_number(0.0);
+                double usage = data.get("total_usage").as_number(0.0);
+                double remaining = credits - usage;
+                std::ostringstream ss_bal, ss_use;
+                ss_bal << std::fixed << std::setprecision(4) << remaining;
+                ss_use << std::fixed << std::setprecision(4) << usage;
+                q.total_balance = ss_bal.str();
+                q.total_usage = ss_use.str();
+                return q;
+            }
+        }
+        q.success = false;
+        q.error_message = !resp.error.empty() ? resp.error : ("HTTP " + std::to_string(resp.status_code) + " - " + resp.body);
+        return q;
+    }
+
+    if (name_ == "groq") {
+        q.console_url = "https://console.groq.com/settings/limits";
+        auto models = list_models(client, api_key);
+        if (!models.empty()) {
+            q.success = true;
+            q.status = "Active";
+            q.info_message = "Standard API key verified. Groq manages rate limits (RPM/TPM) per tier in the Groq console.";
+        } else {
+            q.success = false;
+            q.error_message = "Authentication or connection failed for Groq.";
+        }
+        return q;
+    }
+
+    // Default OpenAI & custom endpoints
+    q.console_url = "https://platform.openai.com/usage";
+    auto models = list_models(client, api_key);
+    if (!models.empty()) {
+        q.success = true;
+        q.status = "Active";
+        q.info_message = "Standard API key verified. OpenAI project keys (sk-...) do not expose billing endpoints. View account balance & costs in the OpenAI usage dashboard.";
+    } else {
+        q.success = false;
+        q.error_message = "Authentication or connection failed for provider '" + name_ + "'.";
+    }
+    return q;
 }
 
 } // namespace ai

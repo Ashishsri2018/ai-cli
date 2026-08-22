@@ -18,6 +18,7 @@ enum class CliMode {
     SetSystemPrompt,
     ShowTemperature,
     SetTemperature,
+    CheckQuota,
     Help,
     Version
 };

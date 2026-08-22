@@ -31,6 +31,7 @@ void print_error(const std::string& msg);
 void print_success(const std::string& msg);
 void print_info(const std::string& msg);
 void print_usage(const UsageInfo& usage);
+void print_quota(const QuotaInfo& quota);
 void print_help();
 void print_version();
 

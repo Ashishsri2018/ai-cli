@@ -20,10 +20,16 @@ public:
     virtual std::vector<std::string> get_headers(const std::string& api_key) const = 0;
     virtual std::string build_request_body(const ChatSession& session, const RequestOptions& options) const = 0;
     virtual std::string extract_response_text(const std::string& response_json) const = 0;
-    virtual void process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback) = 0;
     virtual UsageInfo extract_usage(const std::string& /*response_json*/) const { return UsageInfo{}; }
     virtual void process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback, UsageCallback usage_callback = nullptr) = 0;
     virtual std::vector<std::string> list_models(IHttpClient& client, const std::string& api_key) = 0;
+    virtual QuotaInfo check_quota(IHttpClient& /*client*/, const std::string& /*api_key*/) {
+        QuotaInfo q;
+        q.provider = get_name();
+        q.supported = false;
+        q.info_message = "Account balance API is not exposed for standard API keys. Check your provider console.";
+        return q;
+    }
 };
 
 class ProviderFactory {

@@ -47,6 +47,22 @@ struct UsageInfo {
     bool has_usage{false};
 };
 
+struct QuotaInfo {
+    bool supported{false};
+    bool success{false};
+    std::string provider;
+    std::string currency;
+    std::string total_balance;
+    std::string granted_balance;
+    std::string topped_up_balance;
+    std::string total_usage;
+    std::string limit;
+    std::string status;
+    std::string info_message;
+    std::string console_url;
+    std::string error_message;
+};
+
 struct RequestOptions {
     std::string model;
     std::string system_prompt;

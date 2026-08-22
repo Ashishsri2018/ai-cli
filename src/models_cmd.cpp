@@ -54,4 +54,44 @@ void QueryRunner::list_supported_providers(const ConfigManager& cm) {
     std::cout << "To list models for a provider: " << term::colorize("ai -p <provider> -m", term::Color::Cyan) << "\n";
 }
 
+void QueryRunner::check_provider_quota(ConfigManager& cm, IHttpClient& http_client, const std::string& provider_arg) {
+    if (provider_arg == "all") {
+        const auto& keys = cm.get_config().api_keys;
+        if (keys.empty()) {
+            term::print_error("No providers configured with API keys. Set a key via: ai --set api <key> <provider>");
+            return;
+        }
+        for (const auto& [prov, key] : keys) {
+            auto custom_endpoint = cm.get_custom_endpoint(prov);
+            auto provider = ProviderFactory::create(prov, custom_endpoint);
+            if (provider) {
+                QuotaInfo q = provider->check_quota(http_client, key);
+                term::print_quota(q);
+            }
+        }
+        return;
+    }
+
+    std::string prov = provider_arg.empty() ? cm.get_default_provider() : provider_arg;
+    prov = ConfigManager::normalize_provider(prov);
+
+    auto api_key_opt = cm.get_api_key(prov);
+    std::string api_key = api_key_opt.value_or("");
+    if (api_key.empty() && prov != "ollama") {
+        term::print_error("No API key for provider '" + prov + "'. Set via: ai --set api <key> " + prov);
+        return;
+    }
+
+    auto custom_endpoint = cm.get_custom_endpoint(prov);
+    auto provider = ProviderFactory::create(prov, custom_endpoint);
+    if (!provider) {
+        term::print_error("Unsupported provider: " + prov);
+        return;
+    }
+
+    std::cout << term::colorize("Checking quota / balance for " + prov + "...", term::Color::Dim) << "\n";
+    QuotaInfo q = provider->check_quota(http_client, api_key);
+    term::print_quota(q);
+}
+
 } // namespace ai

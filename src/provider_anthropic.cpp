@@ -60,7 +60,6 @@ std::string AnthropicProvider::extract_response_text(const std::string& response
     return "";
 }
 
-void AnthropicProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback) {
 UsageInfo AnthropicProvider::extract_usage(const std::string& response_json) const {
     UsageInfo usage;
     std::string err;
@@ -165,6 +164,32 @@ std::vector<std::string> AnthropicProvider::list_models(IHttpClient& client, con
         models = {"claude-3-7-sonnet-20250219", "claude-3-5-sonnet-20241022", "claude-3-5-haiku-20241022", "claude-3-opus-20240229"};
     }
     return models;
+}
+
+QuotaInfo AnthropicProvider::check_quota(IHttpClient& client, const std::string& api_key) {
+    QuotaInfo q;
+    q.provider = "anthropic";
+    q.console_url = "https://console.anthropic.com/settings/billing";
+
+    if (api_key.empty()) {
+        q.success = false;
+        q.error_message = "No API key configured for Anthropic.";
+        return q;
+    }
+
+    std::string url = "https://api.anthropic.com/v1/models";
+    auto headers = get_headers(api_key);
+    HttpResponse resp = client.get(url, headers);
+    if (resp.success && resp.status_code == 200) {
+        q.success = true;
+        q.status = "Active";
+        q.info_message = "Standard API key verified. Anthropic Claude manages prepaid credit balance & rate limits in the Anthropic Console.";
+    } else {
+        q.success = false;
+        q.status = "Error / Inactive";
+        q.error_message = !resp.error.empty() ? resp.error : ("HTTP " + std::to_string(resp.status_code) + " - " + resp.body);
+    }
+    return q;
 }
 
 } // namespace ai

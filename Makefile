@@ -44,18 +44,12 @@ TEST_TARGET = run_tests
 
 .PHONY: all clean test install
 
-all: $(TARGET) install
 all: $(TARGET)
 
 $(TARGET): $(OBJS) $(MAIN_OBJ)
 	$(CXX) $(CXXFLAGS) -o $@ $^ $(LDFLAGS)
 
 install: $(TARGET)
-	@mkdir -p $(BINDIR)
-	@cp -f $(TARGET) $(BINDIR)/$(TARGET)
-	@chmod 755 $(BINDIR)/$(TARGET)
-	@if [ -d "/root/.local/bin" ]; then cp -f $(TARGET) /root/.local/bin/$(TARGET) && chmod 755 /root/.local/bin/$(TARGET); fi
-	@echo "Installed $(TARGET) to $(BINDIR)/$(TARGET) for global access."
 	@if [ -w "$(BINDIR)" ]; then \
 		mkdir -p $(BINDIR) && cp -f $(TARGET) $(BINDIR)/$(TARGET) && chmod 755 $(BINDIR)/$(TARGET) && echo "Installed $(TARGET) to $(BINDIR)/$(TARGET) for global access."; \
 	else \

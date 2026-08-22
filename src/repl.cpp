@@ -92,9 +92,13 @@ bool ReplSession::handle_command(const std::string& input) {
                 term::print_info("No token usage recorded yet for this session.");
             }
         }
+    } else if (cmd == "/quota" || cmd == "/balance") {
+        auto key = config_mgr_.get_api_key(current_provider_name_).value_or("");
+        std::cout << term::colorize("Checking quota / balance for " + current_provider_name_ + "...", term::Color::Dim) << "\n";
+        QuotaInfo q = provider_->check_quota(http_client_, key);
+        term::print_quota(q);
     } else if (cmd == "/help") {
-        std::cout << "Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /history, /help, quit\n";
-        std::cout << "Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /usage [on|off], /history, /help, quit\n";
+        std::cout << "Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /usage [on|off], /quota, /history, /help, quit\n";
     } else {
         term::print_error("Unknown command. Type /help for available commands.");
     }

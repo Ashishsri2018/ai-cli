@@ -108,3 +108,21 @@ AI_TEST(CliParserUsageFlags) {
     ASSERT_STREQ(args_usage.provider.c_str(), "google");
     ASSERT_STREQ(args_usage.query.c_str(), "hello");
 }
+
+AI_TEST(CliParserQuotaFlags) {
+    const char* argv_q[] = {"ai", "-q"};
+    CliArgs args_q = CliParser::parse(2, const_cast<char**>(argv_q));
+    ASSERT_EQ(static_cast<int>(args_q.mode), static_cast<int>(CliMode::CheckQuota));
+    ASSERT_TRUE(args_q.provider.empty());
+
+    const char* argv_quota_prov[] = {"ai", "--quota", "deepseek"};
+    CliArgs args_quota_prov = CliParser::parse(3, const_cast<char**>(argv_quota_prov));
+    ASSERT_EQ(static_cast<int>(args_quota_prov.mode), static_cast<int>(CliMode::CheckQuota));
+    ASSERT_STREQ(args_quota_prov.provider.c_str(), "deepseek");
+
+    const char* argv_balance_all[] = {"ai", "--balance", "all"};
+    CliArgs args_balance_all = CliParser::parse(3, const_cast<char**>(argv_balance_all));
+    ASSERT_EQ(static_cast<int>(args_balance_all.mode), static_cast<int>(CliMode::CheckQuota));
+    ASSERT_STREQ(args_balance_all.provider.c_str(), "all");
+}
+

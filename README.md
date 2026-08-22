@@ -246,6 +246,7 @@ Type your message. Commands: /clear, /models, /model <name>, /provider <name>, /
 | `-s [prompt]`, `--system [prompt]` | `-s` | Show prompt (if empty), set default (no query), or use one-off (with query) | `ai -s` or `ai -s "Omit filler."` |
 | `-t [val]`, `--temperature [val]` | `-t` | Show temp (if empty), set default (no query), or use one-off (with query) | `ai -t` or `ai -t 0.3` |
 | `-u`, `--usage` | `-u` | Display API token usage statistics (prompt, completion, total, cached) | `ai -u "hello"` or `ai --usage` |
+| `-q [prov]`, `--quota`, `--balance` | `-q` | Check account quota, remaining credits & billing status | `ai -q`, `ai --quota deepseek`, `ai -q all` |
 | `-p [name]`, `--provider [name]` | `-p` | Select provider, or **list providers** if name omitted | `ai -p` or `ai -p google "hi"` |
 | `-m [name]`, `--model [name]` | `-m` | Select model, or **list models** if name omitted | `ai -m` or `ai -p google -m` |
 | `--models [provider]` | | Fetch and list available models from provider API | `ai --models google` |
@@ -266,15 +267,14 @@ Type your message. Commands: /clear, /models, /model <name>, /provider <name>, /
 make test
 ```
 
-Test coverage (31 unit tests):
-Test coverage (35 unit tests):
+Test coverage (39 unit tests):
 - Self-contained SHA-256 and Base64 cryptographic routines
 - AES/ChaCha stream cipher key encryption & decryption with machine-binding
 - Encrypted configuration persistence & transparent decryption
 - System prompt and temperature persistence and bare flag handling
-- Bare flag parsing (`ai -p`, `ai -m`, `ai -s`, `ai -t`, `ai -p google -m`)
-- Bare flag parsing (`ai -p`, `ai -m`, `ai -s`, `ai -t`, `ai -p google -m`, `ai -u`, `ai --usage`)
+- Bare flag parsing (`ai -p`, `ai -m`, `ai -s`, `ai -t`, `ai -u`, `ai -q`, `ai --quota`)
 - Remote model listing JSON decoding across Google Gemini, OpenAI, and Anthropic
+- Provider quota & credit balance query decoders (DeepSeek, OpenRouter, Gemini, OpenAI, Anthropic)
 - Multi-turn chat session history tracking
 - Gemini, OpenAI, and Anthropic request payload construction & response extraction
 - Real-time Server-Sent Events (SSE) streaming token chunk decoders

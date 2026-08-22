@@ -60,7 +60,6 @@ std::string GoogleGeminiProvider::extract_response_text(const std::string& respo
     return "";
 }
 
-void GoogleGeminiProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback) {
 UsageInfo GoogleGeminiProvider::extract_usage(const std::string& response_json) const {
     UsageInfo usage;
     std::string err;
@@ -134,6 +133,31 @@ std::vector<std::string> GoogleGeminiProvider::list_models(IHttpClient& client, 
         if (supports_gen && !name.empty()) models.push_back(name);
     }
     return models;
+}
+
+QuotaInfo GoogleGeminiProvider::check_quota(IHttpClient& client, const std::string& api_key) {
+    QuotaInfo q;
+    q.provider = "google";
+    q.console_url = "https://aistudio.google.com/app/plan_information";
+
+    if (api_key.empty()) {
+        q.success = false;
+        q.error_message = "No API key configured for Google Gemini.";
+        return q;
+    }
+
+    std::string url = "https://generativelanguage.googleapis.com/v1beta/models?key=" + api_key;
+    HttpResponse resp = client.get(url, {"Content-Type: application/json"});
+    if (resp.success && resp.status_code == 200) {
+        q.success = true;
+        q.status = "Active";
+        q.info_message = "Standard API key verified. Gemini uses rate-limit quotas (e.g. 15 RPM / 1M TPM on Free Tier, pay-as-you-go on Blaze).";
+    } else {
+        q.success = false;
+        q.status = "Error / Inactive";
+        q.error_message = !resp.error.empty() ? resp.error : ("HTTP " + std::to_string(resp.status_code) + " - " + resp.body);
+    }
+    return q;
 }
 
 } // namespace ai

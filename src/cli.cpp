@@ -91,6 +91,12 @@ CliArgs CliParser::parse(int argc, char* argv[]) {
             } else {
                 args.mode = CliMode::ShowTemperature;
             }
+        } else if (arg == "-q" || arg == "--quota" || arg == "--balance") {
+            args.mode = CliMode::CheckQuota;
+            if (i + 1 < argc && argv[i + 1][0] != '-') {
+                args.provider = argv[++i];
+            }
+            return args;
         } else if (arg == "-u" || arg == "--usage") {
             args.show_usage = true;
         } else if (arg == "-c" || arg == "--chat") {
@@ -106,7 +112,8 @@ CliArgs CliParser::parse(int argc, char* argv[]) {
     }
 
     if (args.mode == CliMode::ListProviders || args.mode == CliMode::ListModels ||
-        args.mode == CliMode::ShowSystemPrompt || args.mode == CliMode::ShowTemperature) {
+        args.mode == CliMode::ShowSystemPrompt || args.mode == CliMode::ShowTemperature ||
+        args.mode == CliMode::CheckQuota) {
         return args;
     }
 
