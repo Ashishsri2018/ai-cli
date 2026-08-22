@@ -93,3 +93,18 @@ AI_TEST(CliParserBareFlags) {
     ASSERT_STREQ(args_query_s.system_prompt.c_str(), "Be brief");
     ASSERT_STREQ(args_query_s.query.c_str(), "capital of france");
 }
+
+AI_TEST(CliParserUsageFlags) {
+    const char* argv_u[] = {"ai", "-u", "what", "is", "ai"};
+    CliArgs args_u = CliParser::parse(5, const_cast<char**>(argv_u));
+    ASSERT_EQ(static_cast<int>(args_u.mode), static_cast<int>(CliMode::Query));
+    ASSERT_TRUE(args_u.show_usage);
+    ASSERT_STREQ(args_u.query.c_str(), "what is ai");
+
+    const char* argv_usage[] = {"ai", "--usage", "-p", "google", "hello"};
+    CliArgs args_usage = CliParser::parse(5, const_cast<char**>(argv_usage));
+    ASSERT_EQ(static_cast<int>(args_usage.mode), static_cast<int>(CliMode::Query));
+    ASSERT_TRUE(args_usage.show_usage);
+    ASSERT_STREQ(args_usage.provider.c_str(), "google");
+    ASSERT_STREQ(args_usage.query.c_str(), "hello");
+}

@@ -26,6 +26,12 @@ std::string OpenAIProvider::build_request_body(const ChatSession& session, const
     root["temperature"] = options.temperature;
     root["stream"] = options.stream;
 
+    if (options.stream) {
+        Json stream_options = Json::object();
+        stream_options["include_usage"] = true;
+        root["stream_options"] = stream_options;
+    }
+
     Json messages = Json::array();
     std::string sys = !options.system_prompt.empty() ? options.system_prompt : session.get_system_prompt();
     if (!sys.empty()) {
@@ -61,6 +67,29 @@ std::string OpenAIProvider::extract_response_text(const std::string& response_js
 }
 
 void OpenAIProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback) {
+UsageInfo OpenAIProvider::extract_usage(const std::string& response_json) const {
+    UsageInfo usage;
+    std::string err;
+    Json root = Json::parse(response_json, err);
+    if (!err.empty() || !root.is_object()) return usage;
+    const auto& u = root.get("usage");
+    if (u.is_object()) {
+        usage.prompt_tokens = u.get("prompt_tokens").as_int();
+        usage.completion_tokens = u.get("completion_tokens").as_int();
+        usage.total_tokens = u.get("total_tokens").as_int();
+        if (usage.total_tokens == 0 && (usage.prompt_tokens > 0 || usage.completion_tokens > 0)) {
+            usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
+        }
+        const auto& details = u.get("prompt_tokens_details");
+        if (details.is_object()) {
+            usage.cached_tokens = details.get("cached_tokens").as_int();
+        }
+        usage.has_usage = true;
+    }
+    return usage;
+}
+
+void OpenAIProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback, UsageCallback usage_callback) {
     line_buffer += raw_chunk;
     size_t pos = 0;
     while ((pos = line_buffer.find('\n')) != std::string::npos) {
@@ -74,6 +103,13 @@ void OpenAIProvider::process_stream_chunk(const std::string& raw_chunk, std::str
         std::string token = extract_response_text(data);
         if (!token.empty() && callback) {
             callback(token);
+        }
+
+        if (usage_callback) {
+            UsageInfo usage = extract_usage(data);
+            if (usage.has_usage) {
+                usage_callback(usage);
+            }
         }
     }
 }

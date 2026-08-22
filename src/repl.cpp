@@ -67,8 +67,34 @@ bool ReplSession::handle_command(const std::string& input) {
         }
     } else if (cmd == "/history") {
         term::print_info("Total turns in history: " + std::to_string(session_.size()));
+    } else if (utils::starts_with(cmd, "/usage")) {
+        auto parts = utils::split(cmd, ' ');
+        if (parts.size() > 1) {
+            std::string sub = utils::to_lower(parts[1]);
+            if (sub == "on" || sub == "true" || sub == "1") {
+                options_.show_usage = true;
+                term::print_success("Per-turn token usage display enabled.");
+            } else if (sub == "off" || sub == "false" || sub == "0") {
+                options_.show_usage = false;
+                term::print_success("Per-turn token usage display disabled.");
+            } else {
+                term::print_error("Usage: /usage [on|off]");
+            }
+        } else {
+            if (session_total_usage_.has_usage) {
+                std::cout << term::colorize("Session Total Token Usage:", term::Color::Bold) << "\n";
+                term::print_usage(session_total_usage_);
+                if (last_turn_usage_.has_usage) {
+                    std::cout << term::colorize("Last Turn Token Usage:", term::Color::Dim) << "\n";
+                    term::print_usage(last_turn_usage_);
+                }
+            } else {
+                term::print_info("No token usage recorded yet for this session.");
+            }
+        }
     } else if (cmd == "/help") {
         std::cout << "Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /history, /help, quit\n";
+        std::cout << "Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /usage [on|off], /history, /help, quit\n";
     } else {
         term::print_error("Unknown command. Type /help for available commands.");
     }
@@ -90,6 +116,7 @@ void ReplSession::send_turn(const std::string& user_input) {
 
     std::string assistant_reply;
     std::string sse_buffer;
+    UsageInfo turn_usage;
 
     if (options_.stream) {
         auto on_chunk = [&](const std::string& raw) {
@@ -97,6 +124,8 @@ void ReplSession::send_turn(const std::string& user_input) {
                 std::cout << token;
                 std::cout.flush();
                 assistant_reply += token;
+            }, [&](const UsageInfo& u) {
+                turn_usage = u;
             });
         };
         HttpResponse resp = http_client_.post_stream(url, headers, body, on_chunk);
@@ -113,6 +142,20 @@ void ReplSession::send_turn(const std::string& user_input) {
         }
         assistant_reply = provider_->extract_response_text(resp.body);
         std::cout << assistant_reply << "\n\n";
+        turn_usage = provider_->extract_usage(resp.body);
+    }
+
+    if (turn_usage.has_usage) {
+        last_turn_usage_ = turn_usage;
+        session_total_usage_.prompt_tokens += turn_usage.prompt_tokens;
+        session_total_usage_.completion_tokens += turn_usage.completion_tokens;
+        session_total_usage_.total_tokens += turn_usage.total_tokens;
+        session_total_usage_.cached_tokens += turn_usage.cached_tokens;
+        session_total_usage_.has_usage = true;
+        if (options_.show_usage) {
+            term::print_usage(turn_usage);
+            std::cout << "\n";
+        }
     }
 
     if (!assistant_reply.empty()) {

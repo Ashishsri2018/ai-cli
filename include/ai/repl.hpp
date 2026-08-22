@@ -25,6 +25,8 @@ private:
     std::string current_provider_name_;
     std::unique_ptr<LLMProvider> provider_;
     ChatSession session_;
+    UsageInfo session_total_usage_;
+    UsageInfo last_turn_usage_;
 };
 
 } // namespace ai

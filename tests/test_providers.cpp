@@ -118,3 +118,107 @@ AI_TEST(AnthropicStreamChunkProcessing) {
     p->process_stream_chunk(sse_data, buffer, cb);
     ASSERT_STREQ(collected.c_str(), "Hi there");
 }
+
+AI_TEST(GeminiUsageExtraction) {
+    auto p = ProviderFactory::create("google");
+
+    std::string resp_json = R"({
+        "candidates":[{"content":{"parts":[{"text":"Hello"}]}}],
+        "usageMetadata":{
+            "promptTokenCount":12,
+            "candidatesTokenCount":5,
+            "totalTokenCount":17,
+            "cachedContentTokenCount":4
+        }
+    })";
+
+    UsageInfo usage = p->extract_usage(resp_json);
+    ASSERT_TRUE(usage.has_usage);
+    ASSERT_EQ(usage.prompt_tokens, 12);
+    ASSERT_EQ(usage.completion_tokens, 5);
+    ASSERT_EQ(usage.total_tokens, 17);
+    ASSERT_EQ(usage.cached_tokens, 4);
+
+    // Test stream usage callback
+    std::string buffer;
+    std::string text;
+    UsageInfo stream_usage;
+    std::string sse = "data: {\"candidates\":[{\"content\":{\"parts\":[{\"text\":\"Hello\"}]}}],\"usageMetadata\":{\"promptTokenCount\":12,\"candidatesTokenCount\":5,\"totalTokenCount\":17}}\n\n";
+    p->process_stream_chunk(sse, buffer, [&](const std::string& t) { text += t; }, [&](const UsageInfo& u) { stream_usage = u; });
+
+    ASSERT_STREQ(text.c_str(), "Hello");
+    ASSERT_TRUE(stream_usage.has_usage);
+    ASSERT_EQ(stream_usage.total_tokens, 17);
+}
+
+AI_TEST(OpenAIUsageExtraction) {
+    auto p = ProviderFactory::create("openai");
+
+    std::string resp_json = R"({
+        "choices":[{"message":{"content":"Hello"}}],
+        "usage":{
+            "prompt_tokens":10,
+            "completion_tokens":20,
+            "total_tokens":30,
+            "prompt_tokens_details":{"cached_tokens":3}
+        }
+    })";
+
+    UsageInfo usage = p->extract_usage(resp_json);
+    ASSERT_TRUE(usage.has_usage);
+    ASSERT_EQ(usage.prompt_tokens, 10);
+    ASSERT_EQ(usage.completion_tokens, 20);
+    ASSERT_EQ(usage.total_tokens, 30);
+    ASSERT_EQ(usage.cached_tokens, 3);
+
+    // Test stream chunk with usage
+    std::string buffer;
+    std::string text;
+    UsageInfo stream_usage;
+    std::string sse = "data: {\"choices\":[{\"delta\":{\"content\":\"Hi\"}}]}\n\n"
+                      "data: {\"choices\":[],\"usage\":{\"prompt_tokens\":10,\"completion_tokens\":20,\"total_tokens\":30}}\n\n"
+                      "data: [DONE]\n\n";
+    p->process_stream_chunk(sse, buffer, [&](const std::string& t) { text += t; }, [&](const UsageInfo& u) { stream_usage = u; });
+
+    ASSERT_STREQ(text.c_str(), "Hi");
+    ASSERT_TRUE(stream_usage.has_usage);
+    ASSERT_EQ(stream_usage.prompt_tokens, 10);
+    ASSERT_EQ(stream_usage.completion_tokens, 20);
+    ASSERT_EQ(stream_usage.total_tokens, 30);
+}
+
+AI_TEST(AnthropicUsageExtraction) {
+    auto p = ProviderFactory::create("anthropic");
+
+    std::string resp_json = R"({
+        "content":[{"type":"text","text":"Hello"}],
+        "usage":{
+            "input_tokens":15,
+            "output_tokens":35,
+            "cache_read_input_tokens":5
+        }
+    })";
+
+    UsageInfo usage = p->extract_usage(resp_json);
+    ASSERT_TRUE(usage.has_usage);
+    ASSERT_EQ(usage.prompt_tokens, 15);
+    ASSERT_EQ(usage.completion_tokens, 35);
+    ASSERT_EQ(usage.total_tokens, 50);
+    ASSERT_EQ(usage.cached_tokens, 5);
+
+    // Test stream chunks with message_start and message_delta
+    std::string buffer;
+    std::string text;
+    UsageInfo stream_usage;
+    std::string sse = "data: {\"type\":\"message_start\",\"message\":{\"id\":\"msg_1\",\"usage\":{\"input_tokens\":15,\"output_tokens\":1,\"cache_read_input_tokens\":5}}}\n\n"
+                      "data: {\"type\":\"content_block_delta\",\"delta\":{\"type\":\"text_delta\",\"text\":\"Claude response\"}}\n\n"
+                      "data: {\"type\":\"message_delta\",\"usage\":{\"output_tokens\":35}}\n\n";
+    p->process_stream_chunk(sse, buffer, [&](const std::string& t) { text += t; }, [&](const UsageInfo& u) { stream_usage = u; });
+
+    ASSERT_STREQ(text.c_str(), "Claude response");
+    ASSERT_TRUE(stream_usage.has_usage);
+    ASSERT_EQ(stream_usage.prompt_tokens, 15);
+    ASSERT_EQ(stream_usage.completion_tokens, 35);
+    ASSERT_EQ(stream_usage.total_tokens, 50);
+    ASSERT_EQ(stream_usage.cached_tokens, 5);
+}

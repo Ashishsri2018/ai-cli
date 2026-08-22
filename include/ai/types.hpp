@@ -39,6 +39,14 @@ struct ChatMessage {
     std::string content;
 };
 
+struct UsageInfo {
+    int prompt_tokens{0};
+    int completion_tokens{0};
+    int total_tokens{0};
+    int cached_tokens{0};
+    bool has_usage{false};
+};
+
 struct RequestOptions {
     std::string model;
     std::string system_prompt;
@@ -46,6 +54,7 @@ struct RequestOptions {
     int max_tokens{4096};
     bool stream{true};
     std::string base_url;
+    bool show_usage{false};
 };
 
 struct HttpResponse {
@@ -56,5 +65,6 @@ struct HttpResponse {
 };
 
 using StreamCallback = std::function<void(const std::string& token)>;
+using UsageCallback = std::function<void(const UsageInfo& usage)>;
 
 } // namespace ai

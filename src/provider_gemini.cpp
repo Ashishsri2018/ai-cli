@@ -61,6 +61,26 @@ std::string GoogleGeminiProvider::extract_response_text(const std::string& respo
 }
 
 void GoogleGeminiProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback) {
+UsageInfo GoogleGeminiProvider::extract_usage(const std::string& response_json) const {
+    UsageInfo usage;
+    std::string err;
+    Json root = Json::parse(response_json, err);
+    if (!err.empty() || !root.is_object()) return usage;
+    const auto& meta = root.get("usageMetadata");
+    if (meta.is_object()) {
+        usage.prompt_tokens = meta.get("promptTokenCount").as_int();
+        usage.completion_tokens = meta.get("candidatesTokenCount").as_int();
+        usage.total_tokens = meta.get("totalTokenCount").as_int();
+        usage.cached_tokens = meta.get("cachedContentTokenCount").as_int();
+        if (usage.total_tokens == 0 && (usage.prompt_tokens > 0 || usage.completion_tokens > 0)) {
+            usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
+        }
+        usage.has_usage = true;
+    }
+    return usage;
+}
+
+void GoogleGeminiProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback, UsageCallback usage_callback) {
     line_buffer += raw_chunk;
     size_t pos = 0;
     while ((pos = line_buffer.find('\n')) != std::string::npos) {
@@ -74,6 +94,13 @@ void GoogleGeminiProvider::process_stream_chunk(const std::string& raw_chunk, st
         std::string text = extract_response_text(data);
         if (!text.empty() && callback) {
             callback(text);
+        }
+
+        if (usage_callback) {
+            UsageInfo usage = extract_usage(data);
+            if (usage.has_usage) {
+                usage_callback(usage);
+            }
         }
     }
 }

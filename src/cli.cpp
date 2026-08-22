@@ -91,6 +91,8 @@ CliArgs CliParser::parse(int argc, char* argv[]) {
             } else {
                 args.mode = CliMode::ShowTemperature;
             }
+        } else if (arg == "-u" || arg == "--usage") {
+            args.show_usage = true;
         } else if (arg == "-c" || arg == "--chat") {
             force_chat = true;
         } else if (arg == "--no-stream") {

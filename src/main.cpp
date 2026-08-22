@@ -41,6 +41,7 @@ int main(int argc, char* argv[]) {
         opt.system_prompt = args.has_system_prompt ? args.system_prompt : cm.get_system_prompt();
         opt.temperature = args.has_temperature ? args.temperature : cm.get_temperature();
         opt.stream = args.stream;
+        opt.show_usage = args.show_usage;
         ReplSession repl(cm, http_client, opt);
         repl.run();
         return 0;

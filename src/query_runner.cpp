@@ -43,17 +43,22 @@ void QueryRunner::run_single_query(ConfigManager& cm, IHttpClient& http_client, 
     auto headers = provider->get_headers(api_key);
     std::string body = provider->build_request_body(session, opt);
 
+    UsageInfo usage;
     if (opt.stream) {
         std::string buffer;
         HttpResponse resp = http_client.post_stream(url, headers, body, [&](const std::string& raw) {
             provider->process_stream_chunk(raw, buffer, [&](const std::string& tok) {
                 std::cout << tok;
                 std::cout.flush();
+            }, [&](const UsageInfo& u) {
+                usage = u;
             });
         });
         std::cout << "\n";
         if (!resp.success) {
             term::print_error("Request failed: " + (!resp.error.empty() ? resp.error : ("HTTP " + std::to_string(resp.status_code) + " - " + resp.body)));
+        } else if (args.show_usage) {
+            term::print_usage(usage);
         }
     } else {
         HttpResponse resp = http_client.post(url, headers, body);
@@ -62,6 +67,10 @@ void QueryRunner::run_single_query(ConfigManager& cm, IHttpClient& http_client, 
             return;
         }
         std::cout << provider->extract_response_text(resp.body) << "\n";
+        if (args.show_usage) {
+            UsageInfo non_stream_usage = provider->extract_usage(resp.body);
+            term::print_usage(non_stream_usage);
+        }
     }
 }
 

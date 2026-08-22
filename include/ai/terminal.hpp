@@ -3,6 +3,8 @@
 #include <string>
 #include <iostream>
 
+#include "ai/types.hpp"
+
 namespace ai::term {
 
 enum class Color {
@@ -28,6 +30,7 @@ void print_banner(const std::string& provider, const std::string& model);
 void print_error(const std::string& msg);
 void print_success(const std::string& msg);
 void print_info(const std::string& msg);
+void print_usage(const UsageInfo& usage);
 void print_help();
 void print_version();
 

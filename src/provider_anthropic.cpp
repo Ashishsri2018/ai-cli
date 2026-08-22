@@ -61,6 +61,46 @@ std::string AnthropicProvider::extract_response_text(const std::string& response
 }
 
 void AnthropicProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback) {
+UsageInfo AnthropicProvider::extract_usage(const std::string& response_json) const {
+    UsageInfo usage;
+    std::string err;
+    Json root = Json::parse(response_json, err);
+    if (!err.empty() || !root.is_object()) return usage;
+
+    if (root.get("type").as_string() == "message_start") {
+        const auto& msg = root.get("message");
+        if (msg.is_object() && msg.has("usage")) {
+            const auto& u = msg.get("usage");
+            usage.prompt_tokens = u.get("input_tokens").as_int();
+            usage.completion_tokens = u.get("output_tokens").as_int();
+            usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
+            usage.cached_tokens = u.get("cache_read_input_tokens").as_int();
+            usage.has_usage = true;
+            return usage;
+        }
+    }
+
+    if (root.get("type").as_string() == "message_delta") {
+        if (root.has("usage")) {
+            const auto& u = root.get("usage");
+            usage.completion_tokens = u.get("output_tokens").as_int();
+            usage.has_usage = true;
+            return usage;
+        }
+    }
+
+    const auto& u = root.get("usage");
+    if (u.is_object()) {
+        usage.prompt_tokens = u.get("input_tokens").as_int();
+        usage.completion_tokens = u.get("output_tokens").as_int();
+        usage.total_tokens = usage.prompt_tokens + usage.completion_tokens;
+        usage.cached_tokens = u.get("cache_read_input_tokens").as_int();
+        usage.has_usage = true;
+    }
+    return usage;
+}
+
+void AnthropicProvider::process_stream_chunk(const std::string& raw_chunk, std::string& line_buffer, StreamCallback callback, UsageCallback usage_callback) {
     line_buffer += raw_chunk;
     size_t pos = 0;
     while ((pos = line_buffer.find('\n')) != std::string::npos) {
@@ -74,6 +114,31 @@ void AnthropicProvider::process_stream_chunk(const std::string& raw_chunk, std::
         std::string token = extract_response_text(data);
         if (!token.empty() && callback) {
             callback(token);
+        }
+
+        if (usage_callback) {
+            std::string err;
+            Json root = Json::parse(data, err);
+            if (err.empty() && root.is_object()) {
+                std::string type = root.get("type").as_string();
+                if (type == "message_start") {
+                    const auto& msg = root.get("message");
+                    if (msg.is_object() && msg.has("usage")) {
+                        const auto& u = msg.get("usage");
+                        stream_usage_.prompt_tokens = u.get("input_tokens").as_int();
+                        stream_usage_.cached_tokens = u.get("cache_read_input_tokens").as_int();
+                        stream_usage_.has_usage = true;
+                    }
+                } else if (type == "message_delta") {
+                    if (root.has("usage")) {
+                        const auto& u = root.get("usage");
+                        stream_usage_.completion_tokens = u.get("output_tokens").as_int();
+                        stream_usage_.total_tokens = stream_usage_.prompt_tokens + stream_usage_.completion_tokens;
+                        stream_usage_.has_usage = true;
+                        usage_callback(stream_usage_);
+                    }
+                }
+            }
         }
     }
 }

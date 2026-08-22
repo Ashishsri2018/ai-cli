@@ -46,6 +46,7 @@ void print_banner(const std::string& provider, const std::string& model) {
               << " (" << colorize("Provider: " + provider, Color::Dim)
               << " | " << colorize("Model: " + model, Color::Dim) << ")\n"
               << colorize("Type your message. Commands: /clear, /model <name>, /provider <name>, /system <prompt>, /help, quit.", Color::Dim)
+              << colorize("Type your message. Commands: /clear, /model <name>, /provider <name>, /system <prompt>, /usage, /help, quit.", Color::Dim)
               << "\n\n";
 }
 
@@ -59,6 +60,17 @@ void print_success(const std::string& msg) {
 
 void print_info(const std::string& msg) {
     std::cout << colorize("ℹ ", Color::Cyan) << msg << "\n";
+}
+
+void print_usage(const UsageInfo& usage) {
+    if (!usage.has_usage) return;
+    std::cout << colorize("[Usage] ", Color::Dim)
+              << "Prompt: " << colorize(std::to_string(usage.prompt_tokens), Color::Cyan);
+    if (usage.cached_tokens > 0) {
+        std::cout << " (" << colorize("cached: " + std::to_string(usage.cached_tokens), Color::Dim) << ")";
+    }
+    std::cout << " tokens | Completion: " << colorize(std::to_string(usage.completion_tokens), Color::Cyan)
+              << " tokens | Total: " << colorize(std::to_string(usage.total_tokens), Color::Green) << " tokens\n";
 }
 
 void print_help() {
@@ -77,6 +89,7 @@ void print_help() {
               << "  -m, --model <name>      Select model (e.g. gemini-2.5-flash, gpt-4o, claude-3-5-haiku-20241022)\n"
               << "  -s, --system <prompt>   Set custom system prompt\n"
               << "  -t, --temperature <val> Set temperature (default: 0.7)\n"
+              << "  -u, --usage             Display API token usage statistics\n"
               << "  -c, --chat              Force interactive chat mode\n"
               << "  --no-stream             Disable real-time streaming\n"
               << "  --raw, --no-color       Disable ANSI color codes\n"

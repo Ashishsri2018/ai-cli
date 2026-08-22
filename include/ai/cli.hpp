@@ -34,6 +34,7 @@ struct CliArgs {
     bool has_temperature{false};
     bool stream{true};
     bool color{true};
+    bool show_usage{false};
 
     std::string config_subcommand;
     std::vector<std::string> config_args;
