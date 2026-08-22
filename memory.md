@@ -21,4 +21,15 @@ Building a dependency-free, high-performance C++17 CLI client for cloud LLMs (Go
   - Created comprehensive `README.md` documenting installation, configuration, single queries, stdin piping, REPL interactive commands, bare flag discovery, system prompt / temperature persistence, and flag reference.
   - Added `.gitignore` to prevent tracking compiled binaries (`ai`, `run_tests`) and intermediate object files (`*.o`).
   - Created remote GitHub repository and pushed `master` branch via `gh repo create`.
+- **2026-08-22**:
+  - Implemented token usage and cache tracking (`-u`, `--usage`) across Google Gemini (`usageMetadata`), OpenAI (`usage`), and Anthropic Claude (`message_start` / `message_delta` usage tokens and cache reads).
+  - Implemented REPL `/usage [on|off]` toggle and total session token counters.
+  - Implemented account quota, remaining credits, and balance checking (`-q`, `--quota`, `--balance`, `/quota`):
+    - DeepSeek live `/user/balance` API parsing `total_balance`, `granted_balance`, `topped_up_balance`, and `currency`.
+    - OpenRouter live `/api/v1/credits` API calculating remaining credits from total credits and total usage.
+    - Rate limit verification, API key authentication, and direct console URLs for Google AI Studio, Anthropic Claude, OpenAI, Groq, and Ollama local runner.
+    - Multi-provider inspection (`ai -q all`).
+  - Improved multi-OS build script (`build.sh`) and `Makefile` with unprivileged fallback installation to `~/.local/bin/ai` for Codespace/Termux environments.
+  - Expanded unit test suite to 39/39 passing tests.
+
 

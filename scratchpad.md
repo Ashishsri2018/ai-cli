@@ -67,27 +67,44 @@ data: {"choices":[{"delta":{"content":"Hello"},"index":0,"finish_reason":null}]}
 data: {"type": "content_block_delta", "index": 0, "delta": {"type": "text_delta", "text": "Hello"}}
 ```
 
-## Config JSON File Schema (`~/.config/ai/config.json`)
+## Provider Quota & Balance API Formats
+
+### 1. DeepSeek User Balance API
+- Endpoint: `GET https://api.deepseek.com/user/balance`
+- Headers: `Authorization: Bearer {apiKey}`
+- Response format:
 ```json
 {
-  "default_provider": "google",
-  "default_models": {
-    "google": "gemini-2.5-flash",
-    "openai": "gpt-4o-mini",
-    "anthropic": "claude-3-5-haiku-20241022",
-    "groq": "llama-3.3-70b-versatile",
-    "deepseek": "deepseek-chat",
-    "ollama": "llama3.2"
-  },
-  "api_keys": {
-    "google": "...",
-    "openai": "...",
-    "anthropic": "...",
-    "groq": "...",
-    "deepseek": "..."
-  },
-  "custom_endpoints": {
-    "ollama": "http://localhost:11434/v1"
+  "is_available": true,
+  "balance_infos": [
+    {
+      "currency": "USD",
+      "total_balance": "15.4200",
+      "granted_balance": "5.0000",
+      "topped_up_balance": "10.4200"
+    }
+  ]
+}
+```
+
+### 2. OpenRouter Credits API
+- Endpoint: `GET https://openrouter.ai/api/v1/credits`
+- Headers: `Authorization: Bearer {apiKey}`
+- Response format:
+```json
+{
+  "data": {
+    "total_credits": 25.50,
+    "total_usage": 5.25
   }
 }
 ```
+Remaining balance is computed as: `total_credits - total_usage`.
+
+### 3. Rate-Limit Quotas & Console Links
+- **Google Gemini**: Models endpoint check + `https://aistudio.google.com/app/plan_information`
+- **Anthropic Claude**: Models endpoint check + `https://console.anthropic.com/settings/billing`
+- **OpenAI**: Auth check + `https://platform.openai.com/usage`
+- **Groq**: Auth check + `https://console.groq.com/settings/limits`
+- **Ollama**: Local model execution (no external quotas).
+

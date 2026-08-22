@@ -27,6 +27,14 @@ A lightweight, ultra-fast, dependency-free CLI client written in modern C++17 to
   - **DeepSeek** (`deepseek-chat`, `deepseek-reasoner`)
   - **Ollama** (`llama3.2`, `mistral`, local models)
   - Custom OpenAI-compatible REST endpoints
+- **Token Usage & Cache Tracking (`-u`, `--usage`)**:
+  - Displays prompt tokens, cached prompt tokens, completion tokens, and total tokens in real-time.
+  - Interactive REPL support (`/usage [on|off]` or bare `/usage` to view session total metrics).
+- **Account Quota & Credit Balance Checking (`-q`, `--quota`, `--balance`)**:
+  - Direct API balance queries for providers with exposed billing endpoints (e.g. **DeepSeek** balance & top-ups, **OpenRouter** credits & usage).
+  - Rate limit, plan verification, and direct console URLs for Google AI Studio, Anthropic Claude, OpenAI, and Groq.
+  - Check all configured keys at once with `ai -q all`.
+  - In-session balance check in interactive chat using `/quota` or `/balance`.
 - **Modes of Operation**:
   - **Single Query Mode**: Quick one-off terminal queries.
   - **Continuous Interactive Chat (REPL)**: Multi-turn conversations maintaining conversation context history.
@@ -100,6 +108,34 @@ ai -m
 # List models for a specific provider
 ai -p google -m
 ai -p openai -m
+```
+
+---
+
+### 4. Account Quota, Credits & Balance (`-q`, `--quota`, `--balance`)
+```bash
+# Check quota / balance for the default active provider
+ai -q
+
+# Check quota / balance for a specific provider
+ai -q deepseek
+ai --quota openrouter
+ai --balance google
+ai -q anthropic
+
+# Check quota and account status for all configured providers
+ai -q all
+```
+
+---
+
+### 5. Token Usage Statistics (`-u`, `--usage`)
+```bash
+# Include token usage in single queries
+ai -u "Explain gravity in simple terms"
+
+# Use with any provider or model
+ai -p anthropic -u "Write a python regex"
 ```
 
 ---
@@ -215,10 +251,24 @@ ai -p openai -m gpt-4o --chat
 **Interactive REPL Session Example:**
 ```text
 🤖 AI Terminal Assistant (Provider: google | Model: gemini-3.6-flash)
-Type your message. Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /help, quit.
+Type your message. Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /usage [on|off], /quota, /history, /help, quit.
 
 > What is the capital of France?
 Paris
+
+> /usage on
+✓ Real-time token usage display enabled.
+
+> What is the distance between Paris and London in kilometers?
+The distance between Paris and London is approximately 344 kilometers (214 miles) in a straight line.
+[Usage] Prompt: 18 tokens | Completion: 24 tokens | Total: 42 tokens
+
+> /quota
+Checking quota / balance for google...
+=== Quota & Balance: google ===
+Status        : Active
+Information   : Standard API key verified. Gemini uses rate-limit quotas (e.g. 15 RPM / 1M TPM on Free Tier, pay-as-you-go on Blaze).
+Console URL   : https://aistudio.google.com/app/plan_information
 
 > /models
 Fetching models for google...
@@ -234,7 +284,6 @@ Fetching models for google...
 
 > quit
 Goodbye!
-Type your message. Commands: /clear, /models, /model <name>, /provider <name>, /system <prompt>, /usage [on|off], /help, quit.
 ```
 
 ---

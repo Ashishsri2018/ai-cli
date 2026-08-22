@@ -24,4 +24,21 @@
   - [x] Run `./build.sh`, verify all unit tests pass, and test live commands (`ai -s`, `ai -s "..."`, `ai -t`, `ai -t 0.3`, `ai "..."`)
   - [x] Update `README.md`, `architecture.md`, `memory.md`, and walkthrough
 - [x] Create and push remote GitHub repository via `gh` CLI
+- [x] Token Usage & Cache Metrics (`-u`, `--usage`):
+  - [x] Extract token counts in Google Gemini (`usageMetadata`), OpenAI (`usage`), and Anthropic (`message_start`, `message_delta`)
+  - [x] Add `UsageCallback` in streaming SSE pipeline
+  - [x] Add REPL `/usage [on|off]` command and session total token summary
+  - [x] Add unit tests for token extraction across providers
+- [x] Account Quota & Credit Balance Checking (`-q`, `--quota`, `--balance`, `/quota`):
+  - [x] Define `QuotaInfo` struct and `LLMProvider::check_quota` interface
+  - [x] Implement live balance check for DeepSeek (`/user/balance`)
+  - [x] Implement live credit balance calculation for OpenRouter (`/api/v1/credits`)
+  - [x] Implement API key validity & plan dashboard links for Google Gemini, Anthropic Claude, OpenAI, and Groq
+  - [x] Support checking active provider, specific provider (`ai -q <provider>`), and all providers (`ai -q all`)
+  - [x] Add `/quota` and `/balance` REPL commands
+  - [x] Add unit tests for DeepSeek, OpenRouter, and Gemini quota checks (39/39 passing)
+- [x] Build & Environment Improvements:
+  - [x] Make `Makefile` and `build.sh` handle unprivileged user environments (fallback to `~/.local/bin/ai`)
+- [x] Update all project documentation (`README.md`, `architecture.md`, `memory.md`, `scratchpad.md`, `todo.md`)
+
 
